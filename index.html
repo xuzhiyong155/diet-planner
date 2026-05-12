@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI智能减肥方案生成器</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  min-height: 100vh;
+  color: #1f2937;
+  line-height: 1.6;
+}
+.container { max-width: 640px; margin: 0 auto; padding: 20px 16px 40px; }
+
+/* Header */
+.header { text-align: center; padding: 24px 0 8px; }
+.header .logo { font-size: 48px; margin-bottom: 6px; }
+.header h1 {
+  font-size: 28px; font-weight: 800;
+  background: linear-gradient(135deg, #059669, #0d9488);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header p { color: #6b7280; font-size: 15px; margin-top: 4px; }
+
+/* Card */
+.card {
+  background: #fff; border-radius: 20px; padding: 28px 24px;
+  box-shadow: 0 4px 24px rgba(5,150,105,.10);
+  margin-top: 16px;
+  transition: opacity .3s, transform .3s;
+}
+.card.hidden { display: none; }
+
+/* Progress */
+.progress-wrap { margin-bottom: 24px; }
+.progress-bar { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+.progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, #10b981, #0d9488);
+  border-radius: 3px; transition: width .5s ease;
+}
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 13px; color: #9ca3af; margin-top: 6px;
+}
+
+/* Step Title */
+.step-title { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+.step-sub { color: #6b7280; font-size: 13px; margin-bottom: 20px; }
+
+/* Form */
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block; font-size: 14px; font-weight: 600;
+  color: #374151; margin-bottom: 6px;
+}
+.form-group label .required { color: #ef4444; }
+
+input[type="text"], input[type="number"], select, textarea {
+  width: 100%; padding: 11px 14px; border: 2px solid #e5e7eb;
+  border-radius: 10px; font-size: 15px; font-family: inherit;
+  color: #1f2937; transition: border-color .2s; background: #fff;
+  -webkit-appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.15);
+}
+textarea { resize: vertical; min-height: 70px; }
+
+/* Options Grid */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.options-grid.single { grid-template-columns: 1fr; }
+.options-grid.tri { grid-template-columns: 1fr 1fr 1fr; }
+
+.option-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 14px; border: 2px solid #e5e7eb;
+  border-radius: 10px; cursor: pointer; transition: all .2s;
+  font-size: 14px; background: #fff; user-select: none;
+}
+.option-btn:hover { border-color: #a7f3d0; }
+.option-btn.selected {
+  border-color: #10b981; background: #ecfdf5; color: #047857;
+}
+.option-btn input { display: none; }
+
+/* Feedback */
+.feedback {
+  padding: 10px 14px; border-radius: 10px; font-size: 13px;
+  margin-top: 8px; display: none;
+  animation: fbIn .3s ease;
+}
+.feedback.show { display: block; }
+.feedback-good {
+  background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;
+}
+.feedback-warn {
+  background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa;
+}
+.feedback-info {
+  background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;
+}
+@keyframes fbIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Buttons */
+.btn-row { display: flex; gap: 10px; margin-top: 24px; }
+.btn {
+  flex: 1; padding: 13px 20px; border: none; border-radius: 12px;
+  font-size: 15px; font-weight: 600; cursor: pointer; transition: all .2s;
+  font-family: inherit; text-align: center;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #059669, #0d9488); color: #fff;
+  box-shadow: 0 4px 12px rgba(5,150,105,.3);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(5,150,105,.35); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn-secondary { background: #f3f4f6; color: #4b5563; }
+.btn-secondary:hover { background: #e5e7eb; }
+.btn-outline {
+  background: transparent; border: 2px solid #10b981; color: #059669;
+}
+.btn-outline:hover { background: #ecfdf5; }
+
+/* Welcome */
+.welcome-icon { font-size: 56px; text-align: center; margin-bottom: 10px; }
+.welcome-features { list-style: none; margin: 16px 0; }
+.welcome-features li { padding: 6px 0; font-size: 14px; color: #4b5563; }
+.welcome-features li::before { content: "✅ "; }
+.welcome-price { text-align: center; margin: 16px 0 8px; }
+.welcome-price .amount { font-size: 36px; font-weight: 800; color: #059669; }
+.welcome-price .note { font-size: 13px; color: #9ca3af; margin-top: 2px; }
+
+/* Review */
+.review-section { margin-bottom: 18px; }
+.review-section h3 {
+  font-size: 15px; font-weight: 700; color: #059669;
+  margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid #ecfdf5;
+}
+.review-item {
+  display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px;
+}
+.review-item .label { color: #6b7280; }
+.review-item .value { font-weight: 500; text-align: right; max-width: 60%; }
+
+/* Payment */
+.payment-qr {
+  display: flex; gap: 20px; justify-content: center; margin: 20px 0; flex-wrap: wrap;
+}
+.payment-method { text-align: center; }
+.payment-method .qr-box {
+  width: 160px; height: 160px; border: 2px dashed #d1d5db;
+  border-radius: 12px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-size: 13px; color: #9ca3af; background: #f9fafb;
+}
+.payment-method .qr-box img { width: 100%; height: 100%; object-fit: contain; border-radius: 10px; }
+.payment-method .name { font-size: 14px; font-weight: 600; margin-top: 6px; color: #374151; }
+.payment-price { text-align: center; font-size: 28px; font-weight: 800; color: #059669; margin-bottom: 2px; }
+.payment-tip { text-align: center; font-size: 13px; color: #9ca3af; margin-bottom: 16px; }
+
+/* Loading */
+.loading { text-align: center; padding: 40px 0; }
+.spinner {
+  width: 48px; height: 48px; border: 4px solid #e5e7eb;
+  border-top-color: #10b981; border-radius: 50%;
+  animation: spin .8s linear infinite; margin: 0 auto 20px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-steps { text-align: left; max-width: 320px; margin: 20px auto 0; }
+.loading-steps li {
+  padding: 6px 0; font-size: 14px; color: #6b7280; list-style: none;
+}
+.loading-steps li::before { content: "⏳ "; }
+.loading-steps li.done { color: #059669; }
+.loading-steps li.done::before { content: "✅ "; }
+
+/* Result */
+.result-header { text-align: center; margin-bottom: 20px; }
+.result-header .icon { font-size: 44px; }
+.result-header h2 { font-size: 20px; color: #059669; margin-top: 6px; }
+.result-content { font-size: 14px; line-height: 1.8; }
+
+/* Result Analysis Card */
+.result-analysis {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1px solid #fde68a; border-radius: 14px;
+  padding: 18px 20px; margin-bottom: 20px;
+}
+.result-analysis h3 { font-size: 16px; color: #92400e; margin-bottom: 8px; }
+.result-analysis p { font-size: 14px; color: #78350f; margin-bottom: 6px; line-height: 1.7; }
+
+/* Result Sections */
+.result-section {
+  margin-bottom: 18px; padding-bottom: 14px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.result-section:last-child { border-bottom: none; }
+.result-section h3 {
+  font-size: 16px; font-weight: 700; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.result-section .emoji { font-size: 20px; }
+
+.result-content table {
+  width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;
+}
+.result-content th, .result-content td {
+  border: 1px solid #e5e7eb; padding: 7px 10px; text-align: left;
+}
+.result-content th { background: #ecfdf5; font-weight: 600; }
+.result-content strong { color: #059669; }
+.result-content ul { margin: 6px 0 10px 20px; }
+.result-content li { margin-bottom: 3px; }
+.result-content hr { border: none; border-top: 2px solid #ecfdf5; margin: 16px 0; }
+.result-content blockquote {
+  background: #f9fafb; border-left: 4px solid #10b981;
+  padding: 10px 14px; margin: 10px 0; border-radius: 0 8px 8px 0;
+  font-size: 13px; color: #4b5563;
+}
+.result-content code {
+  background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 13px;
+}
+.result-content pre {
+  background: #1f2937; color: #e5e7eb; padding: 14px; border-radius: 10px;
+  overflow-x: auto; font-size: 13px; margin: 10px 0;
+}
+
+/* Toast */
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: #1f2937; color: #fff; padding: 12px 24px; border-radius: 12px;
+  font-size: 14px; z-index: 999; opacity: 0; transition: opacity .3s;
+  pointer-events: none; max-width: 90%; text-align: center;
+}
+.toast.show { opacity: 1; }
+
+/* Print */
+@media print {
+  body { background: #fff; }
+  .header, .progress-wrap, .btn-row, .toast, #step-0, #step-1, #step-2, #step-3, #step-4, #step-5, #step-6, #step-7 { display: none !important; }
+  .card { box-shadow: none; border: none; padding: 0; }
+  .result-content { font-size: 12pt; }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .container { padding: 12px; }
+  .card { padding: 18px 14px; border-radius: 16px; }
+  .options-grid { grid-template-columns: 1fr; }
+  .options-grid.tri { grid-template-columns: 1fr; }
+  .header h1 { font-size: 22px; }
+  .option-btn { font-size: 13px; padding: 9px 12px; }
+  .payment-method .qr-box { width: 130px; height: 130px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">🌱</div>
+    <h1>AI 智能减肥方案</h1>
+    <p>4 步评估 · 为你量身定制</p>
+  </div>
+
+  <!-- ========== STEP 0: Welcome ========== -->
+  <div class="card" id="step-0">
+    <div class="welcome-icon">💪</div>
+    <h2 class="step-title" style="text-align:center">开启你的蜕变之旅</h2>
+    <p style="text-align:center;color:#6b7280;margin-bottom:6px">
+      填写基本信息，AI 为你生成专属方案
+    </p>
+    <ul class="welcome-features">
+      <li>AI 根据你的生活习惯量身定制</li>
+      <li>涵盖饮食、运动、食谱全方案</li>
+      <li>选择答案时即时获得专业反馈</li>
+      <li>一次付费，永久查看</li>
+    </ul>
+    <div class="welcome-price">
+      <div class="amount">¥9.9</div>
+      <div class="note">一杯奶茶的钱，换一个全新的自己</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goStep(1)">开始评估 →</button>
+    </div>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="card" id="progress-card" style="padding:14px 24px;display:none">
+    <div class="progress-wrap" style="margin:0">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-label">
+        <span id="step-label-now"></span>
+        <span id="step-label-total">共 4 步</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== STEP 1: 基本信息 ========== -->
+  <div class="card hidden" id="step-1">
+    <h2 class="step-title">📋 基本信息</h2>
+    <p class="step-sub">先了解你的身体数据，为方案打好基础</p>
+
+    <div class="form-group">
+      <label>性别 <span class="required">*</span></label>
+      <div class="options-grid" id="gender-options">
+        <div class="option-btn" data-value="男" onclick="selectOption(this,'gender')">👨 男</div>
+        <div class="option-btn" data-value="女" onclick="selectOption(this,'gender')">👩 女</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <div class="form-group" style="flex:1">
+        <label>年龄 <span class="required">*</span></label>
+        <input type="number" id="age" min="10" max="100" placeholder="27" oninput="saveField('age',this.value)">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>身高 (cm) <span class="required">*</span></label>
+        <input type="number" id="height" min="100" max="250" placeholder="180" oninput="saveField('height',this.value)">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <div class="form-group" style="flex:1">
+        <label>当前体重 (kg) <span class="required">*</span></label>
+        <input type="number" id="weight" min="20" max="300" step="0.5" placeholder="90" oninput="saveField('weight',this.value)">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>目标体重 (kg) <span class="required">*</span></label>
+        <input type="number" id="targetWeight" min="20" max="300" step="0.5" placeholder="75" oninput="saveField('targetWeight',this.value)">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>腰围大概多少 (cm)？</label>
+      <input type="number" id="waist" min="40" max="200" placeholder="肚脐位置量一圈，大约多少厘米？不填也行" oninput="saveField('waist',this.value)">
+    </div>
+
+    <div class="form-group">
+      <label>想用多长时间达成目标？</label>
+      <select id="duration" onchange="saveField('duration',this.value)">
+        <option value="30">30 天（快速冲刺）</option>
+        <option value="60">60 天</option>
+        <option value="90" selected>90 天（推荐）</option>
+        <option value="120">120 天（稳步进行）</option>
+        <option value="180">180 天（轻松节奏）</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>减肥最主要的原因是？</label>
+      <div class="options-grid tri" id="reason-options">
+        <div class="option-btn" data-value="改善健康" onclick="selectOption(this,'reason')">❤️ 改善健康</div>
+        <div class="option-btn" data-value="为了好看" onclick="selectOption(this,'reason')">✨ 为了好看</div>
+        <div class="option-btn" data-value="重要日子" onclick="selectOption(this,'reason')">🎯 重要日子</div>
+        <div class="option-btn" data-value="医生建议" onclick="selectOption(this,'reason')">🏥 医生建议</div>
+        <div class="option-btn" data-value="提升自信" onclick="selectOption(this,'reason')">💫 提升自信</div>
+        <div class="option-btn" data-value="其他" onclick="selectOption(this,'reason')">📝 其他</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goStep(0)">← 返回</button>
+      <button class="btn btn-primary" onclick="validateStep1()">下一步 →</button>
+    </div>
+  </div>
+
+  <!-- ========== STEP 2: 饮食 ========== -->
+  <div class="card hidden" id="step-2">
+    <h2 class="step-title">🍽️ 饮食习惯</h2>
+    <p class="step-sub">吃得对才能瘦得快，告诉我你的饮食情况</p>
+
+    <div class="form-group">
+      <label>平时主要怎么吃饭？ <span class="required">*</span></label>
+      <div class="options-grid" id="cooking-options">
+        <div class="option-btn" data-value="自己做饭" onclick="selectOption(this,'cooking')">🍳 自己做饭</div>
+        <div class="option-btn" data-value="点外卖" onclick="selectOption(this,'cooking')">📦 点外卖</div>
+        <div class="option-btn" data-value="食堂" onclick="selectOption(this,'cooking')">🏢 食堂</div>
+        <div class="option-btn" data-value="混合" onclick="selectOption(this,'cooking')">🔄 混合</div>
+      </div>
+      <div class="feedback" id="fb-cooking"></div>
+    </div>
+
+    <div class="form-group">
+      <label>偏好什么口味？ <span class="required">*</span></label>
+      <div class="options-grid" id="cuisine-options">
+        <div class="option-btn" data-value="川辣" onclick="selectOption(this,'cuisine')">🌶️ 川辣</div>
+        <div class="option-btn" data-value="清淡" onclick="selectOption(this,'cuisine')">🥗 清淡</div>
+        <div class="option-btn" data-value="甜口" onclick="selectOption(this,'cuisine')">🍬 甜口</div>
+        <div class="option-btn" data-value="不挑" onclick="selectOption(this,'cuisine')">😋 不挑</div>
+      </div>
+      <div class="feedback" id="fb-cuisine"></div>
+    </div>
+
+    <div class="form-group">
+      <label>蔬菜摄入量怎么样？ <span class="required">*</span></label>
+      <div class="options-grid tri" id="veggies-options">
+        <div class="option-btn" data-value="很少" onclick="selectOption(this,'veggies')">🥬 很少吃</div>
+        <div class="option-btn" data-value="一般" onclick="selectOption(this,'veggies')">🥗 一般般</div>
+        <div class="option-btn" data-value="充足" onclick="selectOption(this,'veggies')">🌿 吃很多</div>
+      </div>
+      <div class="feedback" id="fb-veggies"></div>
+    </div>
+
+    <div class="form-group">
+      <label>喝含糖饮料的频率？ <span class="required">*</span></label>
+      <div class="options-grid" id="drinks-options">
+        <div class="option-btn" data-value="几乎不喝" onclick="selectOption(this,'sweetDrinks')">🚫 几乎不喝</div>
+        <div class="option-btn" data-value="偶尔" onclick="selectOption(this,'sweetDrinks')">🙂 偶尔（1-2次/周）</div>
+        <div class="option-btn" data-value="经常" onclick="selectOption(this,'sweetDrinks')">😐 经常（3-5次/周）</div>
+        <div class="option-btn" data-value="每天" onclick="selectOption(this,'sweetDrinks')">😰 每天喝</div>
+      </div>
+      <div class="feedback" id="fb-sweetDrinks"></div>
+    </div>
+
+    <div class="form-group">
+      <label>有吃宵夜的习惯吗？ <span class="required">*</span></label>
+      <div class="options-grid tri" id="snacks-options">
+        <div class="option-btn" data-value="没有" onclick="selectOption(this,'snacks')">🙅 没有</div>
+        <div class="option-btn" data-value="偶尔" onclick="selectOption(this,'snacks')">🤷 偶尔</div>
+        <div class="option-btn" data-value="经常" onclick="selectOption(this,'snacks')">🌙 经常</div>
+      </div>
+      <div class="feedback" id="fb-snacks"></div>
+    </div>
+
+    <div class="form-group">
+      <label>每天大概喝多少水？ <span class="required">*</span></label>
+      <div class="options-grid" id="water-options">
+        <div class="option-btn" data-value="500ml以下" onclick="selectOption(this,'water')">🥤 很少（<500ml）</div>
+        <div class="option-btn" data-value="500-1000ml" onclick="selectOption(this,'water')">🚰 一般（500-1000ml）</div>
+        <div class="option-btn" data-value="1000-2000ml" onclick="selectOption(this,'water')">💧 还行（1-2L）</div>
+        <div class="option-btn" data-value="2000ml以上" onclick="selectOption(this,'water')">💦 很足（>2L）</div>
+      </div>
+      <div class="feedback" id="fb-water"></div>
+    </div>
+
+    <div class="form-group">
+      <label>喝酒吗？</label>
+      <div class="options-grid tri" id="alcohol-options">
+        <div class="option-btn" data-value="不喝酒" onclick="selectOption(this,'alcohol')">🚫 不喝酒</div>
+        <div class="option-btn" data-value="偶尔" onclick="selectOption(this,'alcohol')">🍺 偶尔喝</div>
+        <div class="option-btn" data-value="经常" onclick="selectOption(this,'alcohol')">🍻 经常喝</div>
+      </div>
+      <div class="feedback" id="fb-alcohol"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goStep(1)">← 上一步</button>
+      <button class="btn btn-primary" onclick="validateStep2()">下一步 →</button>
+    </div>
+  </div>
+
+  <!-- ========== STEP 3: 运动 ========== -->
+  <div class="card hidden" id="step-3">
+    <h2 class="step-title">🏃 运动习惯</h2>
+    <p class="step-sub">不运动也能瘦，但运动会让你瘦得更快更健康</p>
+
+    <div class="form-group">
+      <label>目前的运动频率？ <span class="required">*</span></label>
+      <div class="options-grid" id="exercise-freq-options">
+        <div class="option-btn" data-value="基本不运动" onclick="selectOption(this,'exerciseFreq')">🛋️ 基本不运动</div>
+        <div class="option-btn" data-value="1-2次/周" onclick="selectOption(this,'exerciseFreq')">🚶 1-2次/周</div>
+        <div class="option-btn" data-value="3-4次/周" onclick="selectOption(this,'exerciseFreq')">🏋️ 3-4次/周</div>
+        <div class="option-btn" data-value="5次以上/周" onclick="selectOption(this,'exerciseFreq')">🔥 5次以上/周</div>
+      </div>
+      <div class="feedback" id="fb-exerciseFreq"></div>
+    </div>
+
+    <div class="form-group">
+      <label>对运动的态度是？ <span class="required">*</span></label>
+      <div class="options-grid" id="exercise-attitude-options">
+        <div class="option-btn" data-value="讨厌运动" onclick="selectOption(this,'exerciseAttitude')">😫 讨厌运动</div>
+        <div class="option-btn" data-value="还行" onclick="selectOption(this,'exerciseAttitude')">😐 还行，不讨厌</div>
+        <div class="option-btn" data-value="喜欢运动" onclick="selectOption(this,'exerciseAttitude')">😊 喜欢运动</div>
+        <div class="option-btn" data-value="热爱运动" onclick="selectOption(this,'exerciseAttitude')">🔥 热爱运动</div>
+      </div>
+      <div class="feedback" id="fb-exerciseAttitude"></div>
+    </div>
+
+    <div class="form-group">
+      <label>喜欢什么运动方式？（可多选）</label>
+      <div class="options-grid" id="exercise-type-options">
+        <div class="option-btn" data-value="跑步" onclick="toggleMulti(this,'exerciseType')">🏃 跑步</div>
+        <div class="option-btn" data-value="健身/力量" onclick="toggleMulti(this,'exerciseType')">💪 力量训练</div>
+        <div class="option-btn" data-value="球类" onclick="toggleMulti(this,'exerciseType')">⚽ 球类运动</div>
+        <div class="option-btn" data-value="游泳" onclick="toggleMulti(this,'exerciseType')">🏊 游泳</div>
+        <div class="option-btn" data-value="散步/快走" onclick="toggleMulti(this,'exerciseType')">🚶 散步/快走</div>
+        <div class="option-btn" data-value="骑行" onclick="toggleMulti(this,'exerciseType')">🚴 骑行</div>
+        <div class="option-btn" data-value="跳绳" onclick="toggleMulti(this,'exerciseType')">🪢 跳绳</div>
+        <div class="option-btn" data-value="瑜伽/拉伸" onclick="toggleMulti(this,'exerciseType')">🧘 瑜伽/拉伸</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>每天能花多少时间运动？ <span class="required">*</span></label>
+      <div class="options-grid tri" id="exercise-time-options">
+        <div class="option-btn" data-value="少于30分钟" onclick="selectOption(this,'exerciseTime')">⏳ <30分钟</div>
+        <div class="option-btn" data-value="30-60分钟" onclick="selectOption(this,'exerciseTime')">✅ 30-60分钟</div>
+        <div class="option-btn" data-value="1小时以上" onclick="selectOption(this,'exerciseTime')">💪 >1小时</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>什么时间方便运动？</label>
+      <div class="options-grid" id="exercise-period-options">
+        <div class="option-btn" data-value="早上" onclick="selectOption(this,'exercisePeriod')">🌅 早上</div>
+        <div class="option-btn" data-value="中午" onclick="selectOption(this,'exercisePeriod')">☀️ 中午</div>
+        <div class="option-btn" data-value="下午" onclick="selectOption(this,'exercisePeriod')">🌤️ 下午</div>
+        <div class="option-btn" data-value="晚上" onclick="selectOption(this,'exercisePeriod')">🌙 晚上</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>有什么运动限制或伤病吗？（膝盖、腰、其他）</label>
+      <textarea id="exerciseLimit" placeholder="没有的话留空即可" oninput="saveField('exerciseLimit',this.value)"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goStep(2)">← 上一步</button>
+      <button class="btn btn-primary" onclick="validateStep3()">下一步 →</button>
+    </div>
+  </div>
+
+  <!-- ========== STEP 4: 生活 ========== -->
+  <div class="card hidden" id="step-4">
+    <h2 class="step-title">🌙 生活与健康</h2>
+    <p class="step-sub">生活习惯决定减肥成败，这些信息也很重要</p>
+
+    <div class="form-group">
+      <label>平均几点睡觉？ <span class="required">*</span></label>
+      <div class="options-grid" id="sleep-options">
+        <div class="option-btn" data-value="22点前" onclick="selectOption(this,'sleepTime')">🌜 22点前</div>
+        <div class="option-btn" data-value="23点左右" onclick="selectOption(this,'sleepTime')">🌙 23点左右</div>
+        <div class="option-btn" data-value="0点左右" onclick="selectOption(this,'sleepTime')">🌚 0点左右</div>
+        <div class="option-btn" data-value="1点以后" onclick="selectOption(this,'sleepTime')">☀️ 1点以后</div>
+      </div>
+      <div class="feedback" id="fb-sleepTime"></div>
+    </div>
+
+    <div class="form-group">
+      <label>睡眠质量怎么样？ <span class="required">*</span></label>
+      <div class="options-grid tri" id="sleep-quality-options">
+        <div class="option-btn" data-value="很好" onclick="selectOption(this,'sleepQuality')">😴 很好</div>
+        <div class="option-btn" data-value="一般" onclick="selectOption(this,'sleepQuality')">😐 一般</div>
+        <div class="option-btn" data-value="很差" onclick="selectOption(this,'sleepQuality')">😫 很差</div>
+      </div>
+      <div class="feedback" id="fb-sleepQuality"></div>
+    </div>
+
+    <div class="form-group">
+      <label>工作性质？ <span class="required">*</span></label>
+      <div class="options-grid" id="work-options">
+        <div class="option-btn" data-value="久坐办公" onclick="selectOption(this,'workType')">💺 久坐办公</div>
+        <div class="option-btn" data-value="站立工作" onclick="selectOption(this,'workType')">🧍 站立工作</div>
+        <div class="option-btn" data-value="体力劳动" onclick="selectOption(this,'workType')">🔧 体力劳动</div>
+        <div class="option-btn" data-value="自由职业/其他" onclick="selectOption(this,'workType')">📋 自由职业</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>平时工作压力大吗？</label>
+      <div class="options-grid" id="stress-options">
+        <div class="option-btn" data-value="很小" onclick="selectOption(this,'stress')">😊 很小</div>
+        <div class="option-btn" data-value="一般" onclick="selectOption(this,'stress')">🙂 一般</div>
+        <div class="option-btn" data-value="较大" onclick="selectOption(this,'stress')">😟 较大</div>
+        <div class="option-btn" data-value="很大" onclick="selectOption(this,'stress')">😰 很大</div>
+      </div>
+      <div class="feedback" id="fb-stress"></div>
+    </div>
+
+    <div class="form-group">
+      <label>之前减过肥吗？ <span class="required">*</span></label>
+      <div class="options-grid tri" id="diet-history-options">
+        <div class="option-btn" data-value="没有减过" onclick="selectOption(this,'dietHistory')">😌 没有减过</div>
+        <div class="option-btn" data-value="成功过但反弹了" onclick="selectOption(this,'dietHistory')">🔁 成功过但反弹</div>
+        <div class="option-btn" data-value="减过但失败了" onclick="selectOption(this,'dietHistory')">😢 减过但失败</div>
+      </div>
+      <div class="feedback" id="fb-dietHistory"></div>
+    </div>
+
+    <div class="form-group">
+      <label>有人和你一起减肥吗？</label>
+      <div class="options-grid tri" id="support-options">
+        <div class="option-btn" data-value="有家人支持" onclick="selectOption(this,'support')">👨‍👩‍👧‍👦 家人支持</div>
+        <div class="option-btn" data-value="有朋友一起" onclick="selectOption(this,'support')">👫 朋友一起</div>
+        <div class="option-btn" data-value="一个人减" onclick="selectOption(this,'support')">💪 一个人</div>
+      </div>
+      <div class="feedback" id="fb-support"></div>
+    </div>
+
+    <div class="form-group">
+      <label>有慢性病或正在服药吗？（如高血压、糖尿病、甲状腺等）</label>
+      <textarea id="conditions" placeholder="没有的话填"无"或留空" oninput="saveField('conditions',this.value)"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goStep(3)">← 上一步</button>
+      <button class="btn btn-primary" onclick="validateStep4()">下一步 →</button>
+    </div>
+  </div>
+
+  <!-- ========== STEP 5: 确认信息 ========== -->
+  <div class="card hidden" id="step-5">
+    <h2 class="step-title">✅ 确认信息</h2>
+    <p class="step-sub">核对你的信息，确认无误后去支付</p>
+    <div id="review-content"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goStep(4)">← 返回修改</button>
+      <button class="btn btn-primary" onclick="goStep(6)">确认无误，去支付 →</button>
+    </div>
+  </div>
+
+  <!-- ========== STEP 6: 支付 ========== -->
+  <div class="card hidden" id="step-6">
+    <h2 class="step-title" style="text-align:center">💳 支付</h2>
+    <p class="step-sub" style="text-align:center">支付完成后即可获取专属方案</p>
+    <div class="payment-price" id="payment-price-display">¥9.9</div>
+    <div class="payment-tip">一杯奶茶的钱，换一个全新的自己 💪</div>
+    <div class="payment-qr">
+      <div class="payment-method">
+        <div class="qr-box" id="wechat-qr">
+          <div style="font-size:36px;margin-bottom:6px">💚</div>
+          <div>微信支付</div>
+          <div style="font-size:12px;margin-top:4px">请替换为收款码</div>
+        </div>
+        <div class="name">微信支付</div>
+      </div>
+      <div class="payment-method">
+        <div class="qr-box" id="alipay-qr">
+          <div style="font-size:36px;margin-bottom:6px">💙</div>
+          <div>支付宝</div>
+          <div style="font-size:12px;margin-top:4px">请替换为收款码</div>
+        </div>
+        <div class="name">支付宝</div>
+      </div>
+    </div>
+    <div class="btn-row" style="flex-direction:column">
+      <button class="btn btn-primary" onclick="generatePlan()" style="width:100%">✅ 我已支付，生成方案</button>
+      <button class="btn btn-secondary" onclick="goStep(5)" style="width:100%;margin-top:8px">← 返回检查信息</button>
+    </div>
+  </div>
+
+  <!-- ========== STEP 7: 生成中 ========== -->
+  <div class="card hidden" id="step-7">
+    <div class="loading">
+      <div class="spinner"></div>
+      <h3>AI 正在为你生成专属方案...</h3>
+      <p style="color:#6b7280;font-size:14px">正在分析你的生活习惯</p>
+      <ul class="loading-steps">
+        <li id="ld-1">分析你的身体数据</li>
+        <li id="ld-2">评估饮食习惯</li>
+        <li id="ld-3">设计运动方案</li>
+        <li id="ld-4">生成个性化食谱</li>
+        <li id="ld-5">整理应对策略</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ========== STEP 8: 结果 ========== -->
+  <div class="card hidden" id="step-8">
+    <div class="result-header">
+      <div class="icon">🎉</div>
+      <h2>你的专属减肥方案</h2>
+      <p style="color:#6b7280;font-size:13px;margin-top:2px">建议保存或打印，方便日常查看</p>
+    </div>
+    <div class="result-content" id="result-content"></div>
+    <div class="btn-row" style="flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ 打印/保存PDF</button>
+      <button class="btn btn-outline" onclick="restart()">🔄 重新开始</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  管理员配置
+// ============================================================
+const CONFIG = {
+  // 通义千问 API（留空则使用本地生成）
+  apiKey: '',
+  apiModel: 'qwen-plus',
+  // 价格
+  price: 9.9,
+  // 收款码图片路径（替换为你自己的）
+  wechatQR: 'wechat.jpg',
+  alipayQR: 'alipay.jpg',
+};
+
+// ============================================================
+//  反馈/鼓励 配置
+// ============================================================
+const FEEDBACK = {
+  cooking: {
+    '自己做饭': { type: 'good', text: '👏 太棒了！自己做饭意味着你能完全掌控油盐用量，这是减肥最大的优势！' },
+    '点外卖':   { type: 'warn', text: '💡 外卖也能吃瘦！后面我会教你"外卖怎么点"的技巧，让你照样瘦。' },
+    '食堂':     { type: 'info', text: '📋 食堂吃饭选对窗口和搭配，一样可以健康减肥。' },
+    '混合':     { type: 'info', text: '📋 多种方式灵活搭配，我会针对每种情况给你建议。' },
+  },
+  cuisine: {
+    '川辣': { type: 'info', text: '🌶️ 川辣没问题！麻辣调味本身热量不高，关键是避开油炸食材和油汤拌饭。' },
+    '清淡': { type: 'good', text: '👏 清淡饮食太有利于减肥了！继续保持这个好习惯。' },
+    '甜口': { type: 'warn', text: '💡 偏甜口味要注意隐形糖分，我会帮你找到满足甜食欲望的低卡替代品。' },
+    '不挑': { type: 'good', text: '👏 不挑食是好事！饮食选择更灵活，减肥餐也能吃得丰富多样。' },
+  },
+  veggies: {
+    '很少': { type: 'warn', text: '💡 蔬菜摄入不足会影响饱腹感，我会帮你慢慢增加蔬菜量，从你爱吃的口味入手。' },
+    '一般': { type: 'info', text: '📋 蔬菜量还有提升空间，多吃蔬菜是增加饱腹感最有效的方法之一。' },
+    '充足': { type: 'good', text: '👏 蔬菜吃得多太好了！高纤维低热量，是减肥的最佳搭档。' },
+  },
+  sweetDrinks: {
+    '几乎不喝': { type: 'good', text: '👏 太棒了！不喝含糖饮料是减肥成功的最重要习惯之一！' },
+    '偶尔':     { type: 'info', text: '📋 偶尔喝一次问题不大，我们可以找到更好的替代选择。' },
+    '经常':     { type: 'warn', text: '💡 含糖饮料是减肥的隐形杀手！一杯奶茶 ≈ 一顿饭的热量。后面我给你逐步减少的计划。' },
+    '每天':     { type: 'warn', text: '💡 每天喝含糖饮料确实会让减肥变得困难，但别担心！我会给你温和的减量方案，一步步来。' },
+  },
+  snacks: {
+    '没有': { type: 'good', text: '👏 没有宵夜习惯太好了！这能帮你轻松保持热量缺口。' },
+    '偶尔': { type: 'info', text: '📋 偶尔吃宵夜没关系，关键是吃什么。我会推荐低卡饱腹的选择。' },
+    '经常': { type: 'warn', text: '💡 经常吃宵夜会影响减肥效果，但突然戒掉反而容易暴食。我来帮你逐步调整。' },
+  },
+  water: {
+    '500ml以下':   { type: 'warn', text: '💧 喝得太少了！多喝水能加速代谢、缓解饥饿。建议每天慢慢增加到 2000ml 左右。' },
+    '500-1000ml':  { type: 'warn', text: '💧 饮水量还不够哦，目标是每天 2000-2500ml。可以在桌上放个水杯提醒自己。' },
+    '1000-2000ml': { type: 'good', text: '💧 饮水习惯不错！如果能到 2000ml 以上效果会更好。' },
+    '2000ml以上':  { type: 'good', text: '💧 太棒了！喝够水是减肥成功的重要习惯，继续保持！' },
+  },
+  alcohol: {
+    '不喝酒': { type: 'good', text: '👏 不喝酒太好了！酒精热量高还会影响代谢，省去这笔热量减肥会轻松很多。' },
+    '偶尔':   { type: 'info', text: '📋 偶尔喝酒可以，尽量选低度酒，少喝啤酒，下酒菜也要注意选择。' },
+    '经常':   { type: 'warn', text: '💡 经常饮酒会影响减脂效果，酒精还会让你更容易吃多。我们一起想办法减少。' },
+  },
+  exerciseFreq: {
+    '基本不运动':  { type: 'warn', text: '💪 没关系！很多人都是从零开始的。我会给你最简单的入门方案，让你慢慢动起来。' },
+    '1-2次/周':    { type: 'info', text: '📋 每周动1-2次是个不错的开始！后面可以逐步增加到3-4次。' },
+    '3-4次/周':    { type: 'good', text: '👏 保持这个频率已经很棒了！运动是减肥的加速器。' },
+    '5次以上/周':  { type: 'good', text: '🔥 太厉害了！你已经超越了大多数人，我们要做的是让运动效率更高。' },
+  },
+  exerciseAttitude: {
+    '讨厌运动': { type: 'warn', text: '😊 理解！我会推荐不那么痛苦的方式，让你慢慢找到运动的乐趣。' },
+    '还行':     { type: 'info', text: '📋 中立态度没关系，关键是找到适合自己的运动方式，慢慢就会喜欢上的。' },
+    '喜欢运动': { type: 'good', text: '👏 喜欢运动是减肥的巨大优势！运动对你来说不是负担而是享受。' },
+    '热爱运动': { type: 'good', text: '🔥 热爱运动！你天生就是减肥的好苗子，我们来让训练更高效。' },
+  },
+  sleepTime: {
+    '22点前': { type: 'good', text: '🌜 早睡是最好的美容觉！充足的睡眠有助于代谢和减肥激素分泌。' },
+    '23点左右': { type: 'info', text: '🌙 23点睡还算合理，如果能提前到22:30会更好哦。' },
+    '0点左右': { type: 'warn', text: '🌚 熬夜会影响减肥效果！睡眠不足会让饥饿激素升高，更容易想吃东西。' },
+    '1点以后': { type: 'warn', text: '🌚 睡得太晚了！长期熬夜会严重影响代谢，我们一起来调整作息。' },
+  },
+  sleepQuality: {
+    '很好': { type: 'good', text: '😴 睡眠质量好是减肥的隐形助力！好的睡眠让身体代谢更高效。' },
+    '一般': { type: 'info', text: '📋 睡眠质量还有提升空间，好的睡眠对减肥非常重要。' },
+    '很差': { type: 'warn', text: '💡 睡不好会影响减肥效果。我会给你一些改善睡眠质量的小建议。' },
+  },
+  stress: {
+    '很小': { type: 'good', text: '😊 压力小是好事！压力小更有利于减肥成功。' },
+    '一般': { type: 'info', text: '📋 正常范围的压力不影响减肥，找到适合自己的减压方式就好。' },
+    '较大': { type: 'warn', text: '💡 压力大时容易暴饮暴食，我会给你一些健康的减压替代方案。' },
+    '很大': { type: 'warn', text: '💡 长期高压确实会影响减肥。建议先关注减压，再配合饮食运动调整。' },
+  },
+  dietHistory: {
+    '没有减过':       { type: 'info', text: '📋 第一次减肥没关系！我会给你最基础的方案，照着做就能看到效果。' },
+    '成功过但反弹了': { type: 'warn', text: '💡 能减下来说明你有能力！反弹是因为方法不可持续，这次我们重点解决保持的问题。' },
+    '减过但失败了':   { type: 'warn', text: '💡 失败过不代表你不行，只是方法不对。这次我会给你更轻松、更容易坚持的方案。' },
+  },
+  support: {
+    '有家人支持': { type: 'good', text: '👨‍👩‍👧‍👦 有家人支持是巨大的优势！减肥路上有人鼓励会轻松很多。' },
+    '有朋友一起': { type: 'good', text: '👫 有朋友一起减肥太棒了！互相监督鼓励，效果加倍！' },
+    '一个人减':   { type: 'info', text: '💪 一个人也能减！我会给你足够的鼓励和指导，你并不孤单。' },
+  },
+};
+
+// ============================================================
+//  状态管理
+// ============================================================
+const TOTAL_STEPS = 4;
+let currentStep = 0;
+
+const data = {
+  gender: '', age: '', height: '', weight: '', targetWeight: '', waist: '',
+  duration: '90', reason: '',
+  cooking: '', cuisine: '', veggies: '', sweetDrinks: '', snacks: '',
+  water: '', alcohol: '',
+  exerciseFreq: '', exerciseAttitude: '', exerciseType: [], exerciseTime: '',
+  exercisePeriod: '', exerciseLimit: '',
+  sleepTime: '', sleepQuality: '', workType: '', stress: '',
+  dietHistory: '', support: '', conditions: '',
+};
+
+const stepLabels = ['', '基本信息', '饮食习惯', '运动习惯', '生活与健康'];
+
+// ============================================================
+//  工具函数
+// ============================================================
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function saveField(key, val) { data[key] = val; }
+
+// 单选 + 反馈
+function selectOption(el, field) {
+  const parent = el.parentElement;
+  parent.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  data[field] = el.dataset.value;
+  showFeedback(field, el.dataset.value);
+}
+
+// 多选
+function toggleMulti(el, field) {
+  el.classList.toggle('selected');
+  const val = el.dataset.value;
+  const arr = data[field];
+  const idx = arr.indexOf(val);
+  if (idx > -1) arr.splice(idx, 1);
+  else arr.push(val);
+}
+
+// 反馈显示
+function showFeedback(field, value) {
+  const fbEl = document.getElementById(`fb-${field}`);
+  if (!fbEl) return;
+  const msgs = FEEDBACK[field];
+  if (!msgs || !msgs[value]) { fbEl.classList.remove('show'); return; }
+  const msg = msgs[value];
+  fbEl.className = 'feedback';
+  fbEl.classList.add('show', `feedback-${msg.type}`);
+  fbEl.textContent = msg.text;
+}
+
+// ============================================================
+//  步骤导航
+// ============================================================
+function goStep(n) {
+  // 保存当前步骤的输入值
+  const inputs = document.querySelectorAll(
+    `#step-${currentStep} input[type="text"], #step-${currentStep} input[type="number"],
+     #step-${currentStep} select, #step-${currentStep} textarea`
+  );
+  inputs.forEach(el => {
+    if (el.id && data.hasOwnProperty(el.id)) data[el.id] = el.value;
+  });
+  // 隐藏所有步骤
+  document.querySelectorAll('.card[id^="step-"]').forEach(c => c.classList.add('hidden'));
+  currentStep = n;
+
+  if (n === 0) {
+    document.getElementById('progress-card').style.display = 'none';
+    document.getElementById('step-0').classList.remove('hidden');
+    return;
+  }
+  // 进度条（仅步骤1-4显示）
+  if (n >= 1 && n <= 4) {
+    document.getElementById('progress-card').style.display = 'block';
+    const pct = (n / TOTAL_STEPS) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('step-label-now').textContent = `第 ${n} 步：${stepLabels[n]}`;
+  } else {
+    document.getElementById('progress-card').style.display = 'none';
+  }
+  document.getElementById(`step-${n}`).classList.remove('hidden');
+  if (n === 5) renderReview();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ============================================================
+//  验证
+// ============================================================
+function validateStep1() {
+  if (!data.gender) { toast('请选择性别'); return; }
+  if (!data.age || data.age < 1) { toast('请输入年龄'); return; }
+  if (!data.height || data.height < 50) { toast('请输入身高'); return; }
+  if (!data.weight || data.weight < 10) { toast('请输入当前体重'); return; }
+  if (!data.targetWeight || data.targetWeight < 10) { toast('请输入目标体重'); return; }
+  if (parseFloat(data.targetWeight) >= parseFloat(data.weight)) { toast('目标体重应小于当前体重哦'); return; }
+  goStep(2);
+}
+function validateStep2() {
+  if (!data.cooking) { toast('请选择主要吃饭方式'); return; }
+  if (!data.cuisine) { toast('请选择口味偏好'); return; }
+  if (!data.veggies) { toast('请选择蔬菜摄入量'); return; }
+  if (!data.sweetDrinks) { toast('请选择含糖饮料频率'); return; }
+  if (!data.snacks) { toast('请选择宵夜习惯'); return; }
+  if (!data.water) { toast('请选择饮水量'); return; }
+  goStep(3);
+}
+function validateStep3() {
+  if (!data.exerciseFreq) { toast('请选择运动频率'); return; }
+  if (!data.exerciseAttitude) { toast('请选择对运动的态度'); return; }
+  if (!data.exerciseTime) { toast('请选择每天能花多少时间运动'); return; }
+  goStep(4);
+}
+function validateStep4() {
+  if (!data.sleepTime) { toast('请选择作息时间'); return; }
+  if (!data.sleepQuality) { toast('请选择睡眠质量'); return; }
+  if (!data.workType) { toast('请选择工作性质'); return; }
+  if (!data.dietHistory) { toast('请选择减肥经历'); return; }
+  goStep(5);
+}
+
+// ============================================================
+//  确认页
+// ============================================================
+function renderReview() {
+  const map = {
+    gender:'性别',age:'年龄',height:'身高',weight:'体重',targetWeight:'目标体重',
+    waist:'腰围',duration:'周期（天）',reason:'减肥原因',
+    cooking:'吃饭方式',cuisine:'口味偏好',veggies:'蔬菜摄入',
+    sweetDrinks:'含糖饮料',snacks:'宵夜习惯',water:'饮水量',alcohol:'饮酒',
+    exerciseFreq:'运动频率',exerciseAttitude:'运动态度',exerciseType:'喜欢运动',
+    exerciseTime:'运动时间',exercisePeriod:'运动时段',exerciseLimit:'运动限制',
+    sleepTime:'作息',sleepQuality:'睡眠质量',workType:'工作性质',
+    stress:'工作压力',dietHistory:'减肥经历',support:'减肥伙伴',conditions:'健康状况',
+  };
+  const sections = [
+    { title:'📋 基本信息', keys:['gender','age','height','weight','targetWeight','waist','duration','reason'] },
+    { title:'🍽️ 饮食情况', keys:['cooking','cuisine','veggies','sweetDrinks','snacks','water','alcohol'] },
+    { title:'🏃 运动情况', keys:['exerciseFreq','exerciseAttitude','exerciseType','exerciseTime','exercisePeriod','exerciseLimit'] },
+    { title:'🌙 生活与健康', keys:['sleepTime','sleepQuality','workType','stress','dietHistory','support','conditions'] },
+  ];
+  let html = '';
+  for (const sec of sections) {
+    html += `<div class="review-section"><h3>${sec.title}</h3>`;
+    for (const k of sec.keys) {
+      let v = data[k];
+      if (Array.isArray(v)) v = v.length ? v.join('、') : '未选';
+      if (!v || v === '0') v = '未填写';
+      html += `<div class="review-item"><span class="label">${map[k]||k}</span><span class="value">${v}</span></div>`;
+    }
+    html += '</div>';
+  }
+  document.getElementById('review-content').innerHTML = html;
+}
+
+// ============================================================
+//  方案生成
+// ============================================================
+function buildUserSituation() {
+  const w = parseFloat(data.weight), t = parseFloat(data.targetWeight);
+  const diff = w - t, days = parseInt(data.duration);
+  const weekly = (diff / (days / 7)).toFixed(1);
+  return {
+    gender: data.gender, age: data.age + '岁', height: data.height + 'cm',
+    weight: data.weight + 'kg', targetWeight: data.targetWeight + 'kg',
+    targetLoss: diff.toFixed(1) + 'kg', duration: days + '天',
+    weeklyTarget: weekly + 'kg/周',
+    waist: data.waist || '未测量', reason: data.reason || '未说明',
+    cooking: data.cooking, cuisine: data.cuisine, veggies: data.veggies,
+    sweetDrinks: data.sweetDrinks, snacks: data.snacks,
+    water: data.water, alcohol: data.alcohol || '未说明',
+    exerciseFreq: data.exerciseFreq, exerciseAttitude: data.exerciseAttitude,
+    exerciseType: data.exerciseType.length ? data.exerciseType.join('、') : '未说明',
+    exerciseTime: data.exerciseTime, exercisePeriod: data.exercisePeriod || '未说明',
+    exerciseLimit: data.exerciseLimit || '无',
+    sleepTime: data.sleepTime, sleepQuality: data.sleepQuality,
+    workType: data.workType, stress: data.stress || '一般',
+    dietHistory: data.dietHistory, support: data.support || '未说明',
+    conditions: data.conditions || '无',
+  };
+}
+
+function buildPrompt(s) {
+  return `你是一位专业的中国营养师和健身教练。请根据以下用户信息，制定一份详细、个性化、可执行的减肥方案。
+
+=== 基本信息 ===
+性别：${s.gender}，年龄：${s.age}，身高：${s.height}
+当前体重：${s.weight}，目标体重：${s.targetWeight}，需减：${s.targetLoss}
+周期：${s.duration}，腰围：${s.waist}，减肥原因：${s.reason}
+
+=== 饮食 ===
+吃饭方式：${s.cooking}，口味：${s.cuisine}，蔬菜：${s.veggies}
+含糖饮料：${s.sweetDrinks}，宵夜：${s.snacks}，饮水：${s.water}，饮酒：${s.alcohol}
+
+=== 运动 ===
+频率：${s.exerciseFreq}，态度：${s.exerciseAttitude}
+喜欢：${s.exerciseType}，时间：${s.exerciseTime}，时段：${s.exercisePeriod}
+限制：${s.exerciseLimit}
+
+=== 生活 ===
+作息：${s.sleepTime}，睡眠质量：${s.sleepQuality}，工作：${s.workType}
+压力：${s.stress}，减肥经历：${s.dietHistory}，伙伴：${s.support}
+健康：${s.conditions}
+
+要求：
+1. 先写一段【个人分析】- 针对用户的饮食习惯、运动习惯、生活方式分别给出评价。健康习惯要表扬鼓励，不健康的要给出温和的建设性建议。
+2. 然后按以下结构输出方案：核心数据、饮食方案（分阶段）、运动方案（分阶段）、一周食谱示例、应对策略、进度追踪。
+3. 用中文、markdown格式，语气温暖鼓励，内容务实可执行。`;
+}
+
+// ============================================================
+//  生成个人分析（本地版）
+// ============================================================
+function generateAnalysis(s) {
+  const parts = [];
+
+  // 饮食分析
+  const dietGood = [], dietWarn = [];
+  if (s.cooking === '自己做饭') dietGood.push('你平时自己做饭，能完全控制油盐用量，这是很大的优势！');
+  else if (s.cooking === '点外卖') dietWarn.push('你主要靠外卖，不过别担心，我会教你怎么点外卖也能吃瘦。');
+  else if (s.cooking === '混合') dietGood.push('你做饭和外卖结合，比较灵活。');
+  else dietWarn.push('食堂选择有限，但我会教你怎么选窗口。');
+
+  if (s.veggies === '充足') dietGood.push('蔬菜吃得足，膳食纤维摄入很棒。');
+  else if (s.veggies === '很少') dietWarn.push('蔬菜吃得偏少，需要慢慢增加，这对饱腹感很重要。');
+  else dietWarn.push('蔬菜量还有提升空间。');
+
+  if (s.sweetDrinks === '几乎不喝') dietGood.push('而且你很少喝含糖饮料，这个习惯太棒了！');
+  else if (s.sweetDrinks === '每天' || s.sweetDrinks === '经常') dietWarn.push('含糖饮料是你减肥路上最大的挑战之一，我会给你逐步减少的方案。');
+  else dietWarn.push('含糖饮料建议再少喝一些。');
+
+  if (s.snacks === '没有') dietGood.push('没有宵夜习惯，对保持热量缺口非常有利。');
+  else if (s.snacks === '经常') dietWarn.push('经常吃宵夜会影响减肥效果，我们一起调整。');
+  else dietWarn.push('偶尔吃宵夜要注意吃什么。');
+
+  if (s.water === '2000ml以上' || s.water === '1000-2000ml') dietGood.push('饮水习惯也还不错。');
+  else dietWarn.push('饮水量还需要增加，多喝水能帮助代谢。');
+
+  let dietText = '**🥗 饮食方面：** ';
+  if (dietGood.length) dietText += dietGood.join('');
+  if (dietWarn.length) dietText += '不过，' + dietWarn.join('');
+  if (!dietWarn.length) dietText += '整体饮食习惯已经很好，我们只需在细节上优化就能看到效果。';
+  parts.push(dietText);
+
+  // 运动分析
+  const exGood = [], exWarn = [];
+  if (s.exerciseFreq === '5次以上/周') exGood.push('你能保持每周5次以上的运动频率，非常自律！');
+  else if (s.exerciseFreq === '3-4次/周') exGood.push('你每周运动3-4次，已经很不错了。');
+  else if (s.exerciseFreq === '1-2次/周') exWarn.push('你目前运动不多，但哪怕每周动1-2次也是好的开始。');
+  else exWarn.push('你目前基本不运动，这没关系，很多人都是从零开始的。');
+
+  if (s.exerciseAttitude === '热爱运动' || s.exerciseAttitude === '喜欢运动') exGood.push('而且你本身就喜欢运动，这会让减肥变得轻松很多。');
+  else if (s.exerciseAttitude === '讨厌运动') exWarn.push('我知道你不喜欢运动，我会推荐一些不那么痛苦的方式让你慢慢动起来。');
+  else exWarn.push('随着运动带来变化，你可能会慢慢喜欢上它的。');
+
+  let exText = '**🏃 运动方面：** ';
+  if (exGood.length) exText += exGood.join('');
+  if (exWarn.length) exText += exWarn.join('');
+  if (!exWarn.length) exText += '继续保持！';
+  parts.push(exText);
+
+  // 生活分析
+  const lifeGood = [], lifeWarn = [];
+  if (s.sleepTime === '22点前') lifeGood.push('你能在22点前睡觉，作息非常健康！');
+  else if (s.sleepTime === '23点左右') lifeGood.push('你23点左右睡，还算合理。');
+  else lifeWarn.push('你睡得太晚了，熬夜会影响代谢和食欲激素，建议慢慢提前。');
+
+  if (s.sleepQuality === '很好') lifeGood.push('而且睡眠质量好，这对减肥非常有益。');
+  else if (s.sleepQuality === '很差') lifeWarn.push('你的睡眠质量需要改善，我会给一些小建议。');
+
+  if (s.stress === '较大' || s.stress === '很大') lifeWarn.push('目前工作压力较大，压力大会导致皮质醇升高，容易囤积腹部脂肪，需要注意减压。');
+  else lifeGood.push('工作压力不大，这很有利于减肥。');
+
+  let lifeText = '**🌙 生活方面：** ';
+  if (lifeGood.length) lifeText += lifeGood.join('');
+  if (lifeWarn.length) lifeText += lifeWarn.join('');
+  if (!lifeWarn.length) lifeText += '整体生活习惯已经很好了！';
+  parts.push(lifeText);
+
+  // 减肥经历
+  if (s.dietHistory === '成功过但反弹了') parts.push('**🔁 减肥经历：** 你之前成功减下来过，说明你有这个能力！这次我们一起解决"保持"的问题，不再反弹。');
+  else if (s.dietHistory === '减过但失败了') parts.push('**💪 减肥经历：** 失败过不代表你不行，只是之前的方法不适合你。这次我们换一种更轻松的方式来。');
+  else parts.push('**🌟 减肥经历：** 第一次减肥？那正好，从一开始就用正确的方法，少走弯路！');
+
+  return parts.join('\n\n');
+}
+
+// ============================================================
+//  本地方案生成
+// ============================================================
+function generateLocalPlan(s) {
+  const genderFactor = s.gender === '男' ? 5 : -161;
+  const weight = parseFloat(s.weight), height = parseFloat(s.height), age = parseInt(s.age);
+  const bmr = Math.round(10 * weight + 6.25 * height - 5 * age + genderFactor);
+  let activityFactor = 1.2;
+  if (s.exerciseFreq === '1-2次/周') activityFactor = 1.375;
+  else if (s.exerciseFreq === '3-4次/周') activityFactor = 1.55;
+  else if (s.exerciseFreq === '5次以上/周') activityFactor = 1.725;
+  const tdee = Math.round(bmr * activityFactor);
+  const deficit = s.exerciseFreq === '基本不运动' ? 400 : 500;
+  const dailyIntake = Math.max(1400, tdee - deficit);
+  const protein = Math.round(weight * 1.6);
+
+  const analysis = generateAnalysis(s);
+  const diff = (weight - parseFloat(s.targetWeight)).toFixed(1);
+  const weeks = parseInt(s.duration) / 7;
+
+  return `<div class="result-analysis"><h3>📝 个人分析</h3>
+${analysis.replace(/\n\n/g, '</p><p>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</div>
+
+<div class="result-section"><h3><span class="emoji">📊</span> 核心数据</h3>
+<table>
+<tr><th>指标</th><th>数值</th></tr>
+<tr><td>基础代谢 BMR</td><td><strong>${bmr} kcal</strong></td></tr>
+<tr><td>每日消耗 TDEE</td><td><strong>${tdee} kcal</strong></td></tr>
+<tr><td>推荐每日摄入</td><td><strong>${dailyIntake} kcal</strong></td></tr>
+<tr><td>每日蛋白质目标</td><td><strong>${protein}g</strong></td></tr>
+<tr><td>预计每周减重</td><td><strong>${(diff / weeks).toFixed(1)} kg</strong></td></tr>
+<tr><td>目标周期</td><td>${s.duration}</td></tr>
+</table></div>
+
+<div class="result-section"><h3><span class="emoji">🍱</span> 饮食方案</h3>
+
+<p><strong>适应期（前1/3时间）：</strong> 每日 ${dailyIntake} kcal</p>
+<ul>
+<li>🌅 <strong>早餐</strong>（350-400kcal）：全麦主食 + 鸡蛋2个 + 无糖饮品</li>
+<li>🌞 <strong>午餐</strong>（550-650kcal）：正常吃，主食减半，多菜多蛋白</li>
+<li>🌙 <strong>晚餐</strong>（450-500kcal）：高蛋白+大量蔬菜，主食控制</li>
+<li>🍎 <strong>加餐</strong>（≈100kcal）：水果/无糖酸奶/少量坚果</li>
+</ul>${s.cuisine === '川辣' ? `
+<p><strong>🌶️ 针对你爱吃辣：</strong> 麻辣调味本身热量不高，但避开<strong>油炸食材</strong>和<strong>油汤拌饭</strong>。推荐水煮菜蘸辣椒面、凉拌菜多放醋和辣椒。</p>` : ''}${s.sweetDrinks !== '几乎不喝' ? `
+<p><strong>🧋 奶茶/甜饮替换计划：</strong></p>
+<ul>
+<li>第1周：改成少糖</li>
+<li>第2周：换成无糖果茶</li>
+<li>第3周：换成美式/拿铁/无糖茶</li>
+<li>最终：自制（浓茶+牛奶 ≈ 50kcal）</li>
+</ul>` : ''}${s.snacks !== '没有' ? `
+<p><strong>🌙 宵夜替代方案：</strong> 饿了先喝水等10分钟 → 还饿吃黄瓜番茄魔芋丝 → 再不行喝热牛奶。</p>` : ''}
+</div>
+
+<div class="result-section"><h3><span class="emoji">🏃</span> 运动方案</h3>
+<p><strong>基于你当前的情况：</strong>${s.exerciseFreq}，每天可运动${s.exerciseTime}${s.exerciseLimit !== '无' ? '，注意：' + s.exerciseLimit : ''}</p>
+<ul>
+<li><strong>阶段一（前2周）：</strong> 每周${Math.max(3, Math.min(5, 6 - ['基本不运动','1-2次/周','3-4次/周','5次以上/周'].indexOf(s.exerciseFreq)))}次，30-40分钟有氧+简单力量</li>
+<li><strong>阶段二（第3周起）：</strong> 每周4-5次，力量45分钟+有氧20分钟</li>
+${s.exerciseLimit !== '无' ? '<li>⚠️ 运动时注意避开加重伤病的动作</li>' : ''}
+</ul></div>
+
+<div class="result-section"><h3><span class="emoji">📅</span> 一周食谱示例</h3>
+<table>
+<tr><th>餐次</th><th>周一</th><th>周二</th><th>周三</th></tr>
+<tr><td>🌅 早餐</td><td>全麦面包2片+鸡蛋2个+黑咖啡</td><td>燕麦粥+鸡蛋+豆浆</td><td>包子2个+豆浆</td></tr>
+<tr><td>🌞 午餐</td><td>${s.cooking === '点外卖' ? '轻食沙拉+鸡胸' : '米饭半碗+肉菜+蔬菜'}</td><td>麻辣烫（清汤，多菜少面）</td><td>清蒸鱼+蔬菜+半碗饭</td></tr>
+<tr><td>🌙 晚餐</td><td>鸡胸肉+凉拌黄瓜+杂粮饭</td><td>水煮牛肉蘸辣椒面+蔬菜</td><td>番茄菌菇汤+豆腐+青菜</td></tr>
+</table></div>
+
+<div class="result-section"><h3><span class="emoji">🆘</span> 应对锦囊</h3>
+<ul>
+<li><strong>饿了：</strong> 喝水→等10分钟→吃黄瓜番茄→还饿喝热牛奶</li>
+<li><strong>聚餐：</strong> 清汤锅底/烤肉包生菜，不喝啤酒，当天其他餐少吃</li>
+<li><strong>不想动：</strong> 5分钟法则——先动5分钟，不想动就停（但一般开始就不会停了）</li>
+<li><strong>破戒：</strong> 下一顿恢复正常，不要节食补偿，不要自暴自弃</li>
+</ul></div>
+
+<div class="result-section"><h3><span class="emoji">📏</span> 进度追踪</h3>
+<ul>
+<li>每周一早上空腹称体重、量腰围</li>
+<li>每减${Math.round(parseFloat(diff) / 3 * 10) / 10}kg 奖励自己一次</li>
+<li>记录每周运动天数和含糖饮料杯数</li>
+</ul></div>
+
+<hr>
+<blockquote>💪 这份方案是根据你的个人情况量身定制的。健康的习惯继续保持，需要改进的我们一步步来。坚持下去，你一定能看到变化！</blockquote>`;
+}
+
+// ============================================================
+//  生成方案（主入口）
+// ============================================================
+async function generatePlan() {
+  goStep(7);
+  animateLoading();
+  const situation = buildUserSituation();
+
+  if (CONFIG.apiKey) {
+    try {
+      const result = await callAIAPI(situation);
+      showResult(result);
+    } catch (e) {
+      console.error(e);
+      toast('AI服务暂时不可用，已使用本地方案');
+      showResult(generateLocalPlan(situation));
+    }
+  } else {
+    await new Promise(r => setTimeout(r, 2000));
+    showResult(generateLocalPlan(situation));
+  }
+}
+
+function animateLoading() {
+  const ids = ['ld-1','ld-2','ld-3','ld-4','ld-5'];
+  ids.forEach((id, i) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('done');
+    }, (i + 1) * 600);
+  });
+}
+
+// ============================================================
+//  通义千问 API
+// ============================================================
+async function callAIAPI(situation) {
+  const prompt = buildPrompt(situation);
+  const resp = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${CONFIG.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: CONFIG.apiModel,
+      input: {
+        messages: [
+          { role: 'system', content: '你是一位专业的中国营养师和健身教练，精通减肥和健康管理。用中文输出详细的个性化方案，使用markdown格式。语气温暖鼓励，内容务实可执行。对健康习惯要表扬，对不健康的习惯给出建设性建议。' },
+          { role: 'user', content: prompt },
+        ],
+      },
+      parameters: { result_format: 'message', temperature: 0.8, top_p: 0.9 },
+    }),
+  });
+  if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+  const result = await resp.json();
+  return result.output.choices[0].message.content;
+}
+
+// ============================================================
+//  显示结果
+// ============================================================
+function showResult(text) {
+  document.getElementById('step-7').classList.add('hidden');
+  const el = document.getElementById('result-content');
+  el.innerHTML = simpleMarkdown(text);
+  document.getElementById('step-8').classList.remove('hidden');
+  try {
+    const h = JSON.parse(localStorage.getItem('diet_plans') || '[]');
+    h.unshift({ date: new Date().toLocaleString(), plan: text, user: { ...data } });
+    if (h.length > 10) h.pop();
+    localStorage.setItem('diet_plans', JSON.stringify(h));
+  } catch(e) {}
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ============================================================
+//  Markdown 渲染
+// ============================================================
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function processInline(text) {
+  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`(.+?)`/g, '<code>$1</code>');
+}
+function simpleMarkdown(text) {
+  const blocks = text.split('\n\n');
+  const result = blocks.map(block => {
+    block = block.trim();
+    if (!block) return '';
+    if (block.startsWith('```')) {
+      const lines = block.split('\n'); lines.shift();
+      if (lines.length && lines[lines.length-1].trim() === '```') lines.pop();
+      return '<pre><code>' + escapeHtml(lines.join('\n')) + '</code></pre>';
+    }
+    if (/^[-*]{3,}$/.test(block)) return '<hr>';
+    if (/^#{1,3}\s/.test(block)) {
+      const level = block.match(/^#{1,3}/)[0].length;
+      return `<h${level}>${processInline(block.replace(/^#{1,3}\s+/,''))}</h${level}>`;
+    }
+    if (block.includes('\n|') || block.startsWith('|')) {
+      const lines = block.split('\n').filter(l => l.trim());
+      const rows = lines.filter(l => !/^\|?[-:| ]+\|?$/.test(l.trim())).map(line => {
+        const cells = line.split('|').filter(c => c.trim() !== '');
+        if (!cells.length) return '';
+        return '<tr>' + cells.map(c => '<td>' + processInline(c.trim()) + '</td>').join('') + '</tr>';
+      }).filter(r => r);
+      return rows.length ? '<table>' + rows.join('') + '</table>' : block;
+    }
+    const lines = block.split('\n');
+    const allList = lines.every(l => /^- .+|^$/.test(l.trim())) && lines.some(l => l.trim().startsWith('- '));
+    if (allList) return '<ul>' + lines.filter(l => l.trim().startsWith('- ')).map(l => '<li>' + processInline(l.trim().slice(2)) + '</li>').join('') + '</ul>';
+    const allOrdered = lines.every(l => /^\d+\..+|^$/.test(l.trim())) && lines.some(l => /^\d+\.\s/.test(l.trim()));
+    if (allOrdered) return '<ol>' + lines.filter(l => /^\d+\.\s/.test(l.trim())).map(l => '<li>' + processInline(l.trim().replace(/^\d+\.\s+/,'')) + '</li>').join('') + '</ol>';
+    if (lines.every(l => l.trim().startsWith('> '))) return '<blockquote>' + lines.map(l => processInline(l.trim().slice(2))).join('<br>') + '</blockquote>';
+    return '<p>' + processInline(block) + '</p>';
+  });
+  return result.join('\n');
+}
+
+// ============================================================
+//  重新开始
+// ============================================================
+function restart() {
+  if (!confirm('确定要重新开始吗？当前方案将保留在历史记录中。')) return;
+  Object.keys(data).forEach(k => { if (Array.isArray(data[k])) data[k] = []; else data[k] = ''; });
+  data.duration = '90';
+  document.querySelectorAll('.option-btn.selected').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.feedback.show').forEach(f => f.classList.remove('show'));
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if (el.id === 'duration') { el.value = '90'; return; }
+    if (el.tagName === 'SELECT') { el.selectedIndex = 0; return; }
+    el.value = '';
+  });
+  document.querySelectorAll('.card[id^="step-"]').forEach(c => c.classList.add('hidden'));
+  document.getElementById('progress-card').style.display = 'none';
+  document.getElementById('step-0').classList.remove('hidden');
+  currentStep = 0;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ============================================================
+//  初始化
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelector('.welcome-price .amount').textContent = '¥' + CONFIG.price;
+  document.getElementById('payment-price-display').textContent = '¥' + CONFIG.price;
+  if (CONFIG.wechatQR) document.getElementById('wechat-qr').innerHTML = '<img src="' + CONFIG.wechatQR + '" alt="微信收款码">';
+  if (CONFIG.alipayQR) document.getElementById('alipay-qr').innerHTML = '<img src="' + CONFIG.alipayQR + '" alt="支付宝收款码">';
+});
+</script>
+</body>
+</html>
