@@ -273,6 +273,74 @@ textarea { resize: vertical; min-height: 70px; }
 }
 .toast.show { opacity: 1; }
 
+/* ===== Chat Widget ===== */
+.chat-btn {
+  position: fixed; bottom: 20px; right: 20px;
+  width: 54px; height: 54px; border-radius: 50%;
+  background: linear-gradient(135deg, #059669, #0d9488);
+  color: #fff; border: none; font-size: 24px; cursor: pointer;
+  z-index: 999; display: none; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(5,150,105,.3);
+}
+.chat-btn.visible { display: flex; }
+.chat-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.4); z-index: 1000; display: none;
+  align-items: flex-end; justify-content: center;
+}
+.chat-overlay.open { display: flex; }
+.chat-panel {
+  background: #fff; border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 480px; max-height: 80vh;
+  display: flex; flex-direction: column;
+  animation: slideUp .3s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.chat-header {
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #059669, #0d9488);
+  color: #fff; border-radius: 20px 20px 0 0;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 16px; font-weight: 700;
+}
+.chat-header .close-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; padding: 0 4px; }
+.chat-msgs { flex: 1; overflow-y: auto; padding: 16px; min-height: 200px; max-height: 55vh; }
+.chat-input-row {
+  padding: 10px 14px; border-top: 1px solid #e5e7eb;
+  display: flex; gap: 8px; align-items: center; background: #fff;
+  border-radius: 0 0 20px 20px;
+}
+.chat-input-row input {
+  flex: 1; padding: 10px 14px; border: 2px solid #e5e7eb;
+  border-radius: 10px; font-size: 15px; font-family: inherit; outline: none;
+}
+.chat-input-row input:focus { border-color: #10b981; }
+.chat-input-row .send-btn {
+  padding: 10px 18px; background: linear-gradient(135deg, #059669, #0d9488);
+  color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.chat-msg { margin-bottom: 12px; display: flex; }
+.chat-msg.user { justify-content: flex-end; }
+.chat-msg.assistant { justify-content: flex-start; }
+.chat-msg.system { justify-content: center; }
+.chat-msg .bubble {
+  max-width: 80%; padding: 10px 14px; border-radius: 14px;
+  font-size: 14px; line-height: 1.6; word-break: break-word;
+}
+.chat-msg.user .bubble { background: #059669; color: #fff; border-radius: 14px 4px 14px 14px; }
+.chat-msg.assistant .bubble { background: #f3f4f6; color: #1f2937; border-radius: 4px 14px 14px 14px; }
+.chat-msg.system .bubble { background: #fff7ed; color: #9a3412; font-size: 13px; max-width: 90%; }
+.chat-msg .typing-dots::after { content: '...'; animation: dots 1.5s infinite; }
+@keyframes dots { 0% { content: '.'; } 50% { content: '..'; } 100% { content: ''; } }
+
+/* ===== VIP Section in Result ===== */
+.vip-section {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1px solid #fde68a; border-radius: 14px;
+  padding: 18px 20px; margin: 20px 0;
+}
+
 @media print {
   body { background: #fff; }
   .header, .btn-row, .toast { display: none !important; }
@@ -766,6 +834,28 @@ textarea { resize: vertical; min-height: 70px; }
 
 </div>
 
+<!-- ========== AI 聊天面板（陪跑版专用） ========== -->
+<div class="chat-overlay" id="chat-overlay">
+  <div class="chat-panel">
+    <div class="chat-header">
+      <span>💬 AI 营养师</span>
+      <button class="close-btn" onclick="toggleChat()">✕</button>
+    </div>
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="chat-msg system">
+        <div class="bubble">你好！我是你的 AI 营养师，有什么关于减肥方案的问题尽管问我 😊</div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="输入你的问题..." onkeydown="if(event.key==='Enter')sendMessage()">
+      <button class="send-btn" onclick="sendMessage()">发送</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 浮动聊天按钮（陪跑版专用） ========== -->
+<button class="chat-btn" id="chat-btn" onclick="toggleChat()">💬</button>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1070,45 +1160,30 @@ function renderPayment() {
 
   const container = document.getElementById('payment-content');
 
-  if (selectedPlan === 'vip') {
-    // 陪跑版 → 加微信
-    container.innerHTML = `
-      <h2 class="step-title" style="text-align:center">🥇 陪跑版 · ¥99</h2>
-      <p class="step-sub" style="text-align:center">添加微信，开启你的 1对1 专属陪跑服务</p>
-      <div class="wechat-card">
-        <div class="icon">💬</div>
-        <div class="id-label">长按复制微信号</div>
-        <div class="id-value" id="wechat-id-display">${CONFIG.wechatId}</div>
-        <div class="hint">添加时请备注：<strong>减肥陪跑</strong><br>通过后发送你的评估信息，我会为你提供 1对1 服务</div>
-      </div>
-      <div style="background:#fff7ed;border-radius:10px;padding:14px;font-size:13px;color:#9a3412;border:1px solid #fed7aa">
-        <strong>📌 包含服务：</strong><br>
-        ✅ AI 专属减肥方案<br>
-        ✅ 1对1 微信指导，随时提问<br>
-        ✅ 每周跟进调整饮食运动计划<br>
-        ✅ 满30天免费更新方案<br>
-        ✅ 饮食/运动实时优化建议
-      </div>
-      <div class="btn-row" style="flex-direction:column;margin-top:20px">
-        <button class="btn btn-primary" onclick="copyWechat()" style="width:100%">📋 复制微信号 Xkk99ing</button>
-        <button class="btn btn-secondary" onclick="goStep(6)" style="width:100%;margin-top:8px">← 返回选择套餐</button>
-      </div>
-    `;
-    return;
-  }
-
-  // 基础版/进阶版 → QR码支付
+  // 所有方案统一走 QR 码支付
   generateOrderId();
+
+  const vipExtras = selectedPlan === 'vip' ? `
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;margin-bottom:12px;font-size:13px;color:#92400e">
+      <strong>🥇 支付后你将获得：</strong><br>
+      ✅ AI 专属减肥方案（永久查看）<br>
+      ✅ 1对1 微信指导（支付后显示微信号 <strong>${CONFIG.wechatId}</strong>）<br>
+      ✅ AI 营养师在线问答（网页内随时提问）<br>
+      ✅ 满30天免费更新方案
+    </div>
+  ` : `
+    <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#047857">
+      <strong>💡 支付后即可查看专属方案，永久有效。</strong>
+    </div>
+  `;
+
   container.innerHTML = `
     <h2 class="step-title" style="text-align:center">${plan.label} · ¥${plan.price}</h2>
     <p class="step-sub" style="text-align:center">扫码支付后输入订单号验证</p>
     <div class="payment-price">¥${plan.price}</div>
     <div class="payment-tip">支付后永久查看，随时可用</div>
 
-    <div class="payment-order" style="text-align:center;margin:12px 0;padding:12px;background:#f0fdf4;border-radius:10px;border:1px solid #a7f3d0">
-      <div style="font-size:13px;color:#6b7280">本次订单号（支付时填在备注里方便核对）</div>
-      <div id="order-display" style="font-size:20px;font-weight:800;color:#059669;letter-spacing:2px;margin-top:4px">${currentOrderId}</div>
-    </div>
+    ${vipExtras}
 
     <div class="payment-qr">
       <div class="payment-method">
@@ -1165,6 +1240,176 @@ function copyWechat() {
   }).catch(() => {
     toast('微信号：' + CONFIG.wechatId + '（请手动复制）');
   });
+}
+
+// ============================================================
+//  持久化保存（关闭网页再打开直接看方案）
+// ============================================================
+let savedPlanText = '';
+
+function saveCurrentState() {
+  try {
+    localStorage.setItem('diet_current_state', JSON.stringify({
+      planText: savedPlanText,
+      userData: data,
+      planType: selectedPlan,
+    }));
+  } catch(e) {}
+}
+
+function clearSavedState() {
+  localStorage.removeItem('diet_current_state');
+}
+
+// ============================================================
+//  AI 聊天（陪跑版专用）
+// ============================================================
+const chatHistory = [];
+
+function toggleChat() {
+  const overlay = document.getElementById('chat-overlay');
+  overlay.classList.toggle('open');
+  if (overlay.classList.contains('open')) {
+    setTimeout(() => document.getElementById('chat-input').focus(), 400);
+  }
+}
+
+function addChatMessage(role, content) {
+  const msgs = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.innerHTML = '<div class="bubble">' + content.replace(/\n/g, '<br>') + '</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  addChatMessage('user', text);
+  input.value = '';
+  chatHistory.push({ role: 'user', content: text });
+
+  // 显示正在输入
+  const msgs = document.getElementById('chat-msgs');
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'chat-msg assistant';
+  typingDiv.id = 'chat-typing';
+  typingDiv.innerHTML = '<div class="bubble typing-dots"></div>';
+  msgs.appendChild(typingDiv);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  let reply = '';
+  if (CONFIG.apiKey) {
+    try {
+      reply = await chatWithAI(text);
+    } catch(e) {
+      reply = chatFallback(text);
+    }
+  } else {
+    // 模拟延迟
+    await new Promise(r => setTimeout(r, 1000));
+    reply = chatFallback(text);
+  }
+
+  // 移除正在输入
+  const typing = document.getElementById('chat-typing');
+  if (typing) typing.remove();
+
+  addChatMessage('assistant', reply);
+  chatHistory.push({ role: 'assistant', content: reply });
+
+  // 保持聊天历史在合理长度
+  while (chatHistory.length > 20) {
+    chatHistory.shift();
+    chatHistory.shift();
+  }
+}
+
+async function chatWithAI(message) {
+  const planText = savedPlanText || '';
+  const systemContent = `你是一位专业的中国营养师和健身教练。用户购买了你的陪跑版减肥服务。请根据以下用户的专属减肥方案回答他的问题，给出具体、温暖、鼓励的建议。
+
+如果问题超出方案范围，用你的专业知识回答，但始终保持减肥/营养/健康相关。
+
+=== 用户专属减肥方案 ===
+${planText.substring(0, 3000)}`;
+
+  const msgs = [
+    { role: 'system', content: systemContent },
+    ...chatHistory.slice(-10).map(m => ({ role: m.role, content: m.content })),
+    { role: 'user', content: message },
+  ];
+
+  const resp = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + CONFIG.apiKey,
+    },
+    body: JSON.stringify({
+      model: CONFIG.apiModel,
+      input: { messages: msgs },
+      parameters: { result_format: 'message', temperature: 0.8, top_p: 0.9 },
+    }),
+  });
+  if (!resp.ok) throw new Error('API error');
+  const result = await resp.json();
+  return result.output.choices[0].message.content;
+}
+
+function chatFallback(text) {
+  const t = text.toLowerCase();
+  if (t.includes('吃') && (t.includes('什么') || t.includes('建议'))) {
+    return '根据你的方案，建议每餐保持：主食选杂粮/红薯（一拳头大小），蛋白质选鸡胸/鱼/虾/豆腐（手掌大小），蔬菜不限量。饿的时候吃黄瓜、番茄、魔芋丝，都是几乎零卡的选择！';
+  }
+  if (t.includes('运动') || t.includes('练')) {
+    return '运动方面建议保持每周 3-5 次，每次 40-60 分钟。力量训练和有氧结合效果最好。不想动的时候用"5分钟法则"——先动 5 分钟，不想动就停，通常动起来就不会停了！';
+  }
+  if (t.includes('平台') || t.includes('不动') || t.includes('没效果')) {
+    return '平台期很正常！可以尝试：① 调整碳水摄入（训练日多吃碳水，休息日低碳）② 增加运动强度或换运动方式 ③ 保证睡眠质量。连续 2 周不动再调整策略，别着急！';
+  }
+  if (t.includes('饿') || t.includes('想吃')) {
+    return '饿了是好事，说明在消耗脂肪！试试：① 喝一大杯水（300-500ml），等 10 分钟 ② 还饿就吃黄瓜/番茄（不限量） ③ 再不行喝杯热牛奶或无糖酸奶。实在饿得受不了说明晚餐蛋白质不够，明天晚餐多加些肉！';
+  }
+  if (t.includes('聚餐') || t.includes('饭局') || t.includes('酒')) {
+    return '聚餐不扫兴策略：① 选清汤锅底/烤肉包生菜 ② 尽量不喝啤酒，可以喝白酒/红酒少量 ③ 当天其他两餐吃少一些平衡。偶尔一顿吃多不会胖，别自责！';
+  }
+  return '关于这个问题，建议参考你的专属方案中的建议。如果方案中没有涉及，可以试试调整饮食结构、保证蛋白质摄入、保持规律运动。减肥是一个过程，坚持下去就会有收获！如果需要更具体的建议，可以告诉我更多细节 😊';
+}
+
+// ============================================================
+//  VIP 结果页额外内容
+// ============================================================
+function appendVipSection() {
+  // 避免重复追加
+  const old = document.querySelector('.vip-section');
+  if (old) old.remove();
+  const resultContent = document.getElementById('result-content');
+  const vipDiv = document.createElement('div');
+  vipDiv.className = 'vip-section';
+  vipDiv.innerHTML = `
+    <h3 style="margin-bottom:10px;color:#92400e">🥇 陪跑版专属服务</h3>
+    <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;margin-bottom:12px">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px">添加微信，获取 1对1 指导</div>
+      <div style="font-size:22px;font-weight:800;color:#059669;letter-spacing:2px;padding:6px 16px;background:#f0fdf4;border-radius:8px;display:inline-block;border:2px dashed #34d399">
+        ${CONFIG.wechatId}
+      </div>
+      <div style="margin-top:8px">
+        <button class="btn btn-primary" onclick="copyWechat()" style="padding:8px 20px;font-size:13px;display:inline-block;width:auto">📋 复制微信号</button>
+      </div>
+      <div style="font-size:12px;color:#9ca3af;margin-top:6px">添加时备注「减肥陪跑」，通过后随时咨询</div>
+    </div>
+    <div style="background:#f0fdf4;border-radius:10px;padding:12px;font-size:13px;color:#047857;text-align:center">
+      💬 点右下角 💬 按钮可随时向我提问（AI 营养师在线解答）
+    </div>
+  `;
+  resultContent.parentNode.insertBefore(vipDiv, resultContent.nextSibling);
+
+  // 显示聊天按钮
+  document.getElementById('chat-btn').classList.add('visible');
 }
 
 // ============================================================
@@ -1423,17 +1668,29 @@ async function callAIAPI(situation) {
 // ============================================================
 //  显示结果
 // ============================================================
-function showResult(text) {
+function showResult(text, fromSaved) {
   document.getElementById('step-8').classList.add('hidden');
   const el = document.getElementById('result-content');
   el.innerHTML = simpleMarkdown(text);
   document.getElementById('step-9').classList.remove('hidden');
-  try {
-    const h = JSON.parse(localStorage.getItem('diet_plans') || '[]');
-    h.unshift({ date: new Date().toLocaleString(), plan: text, user: { ...data }, planType: selectedPlan });
-    if (h.length > 10) h.pop();
-    localStorage.setItem('diet_plans', JSON.stringify(h));
-  } catch(e) {}
+
+  // 持久化保存（支付后才调用，fromSaved 为 true 表示是从本地恢复的不需要再保存）
+  if (!fromSaved) {
+    savedPlanText = text;
+    saveCurrentState();
+    try {
+      const h = JSON.parse(localStorage.getItem('diet_plans') || '[]');
+      h.unshift({ date: new Date().toLocaleString(), plan: text, user: { ...data }, planType: selectedPlan });
+      if (h.length > 10) h.pop();
+      localStorage.setItem('diet_plans', JSON.stringify(h));
+    } catch(e) {}
+  }
+
+  // 陪跑版追加微信名片 + AI 聊天
+  if (selectedPlan === 'vip') {
+    appendVipSection();
+  }
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1476,8 +1733,10 @@ function simpleMarkdown(text) {
 // ============================================================
 function restart() {
   if (!confirm('确定要重新开始吗？')) return;
+  clearSavedState();
   Object.keys(data).forEach(k => { if (Array.isArray(data[k])) data[k] = []; else data[k] = ''; });
-  data.duration = '90'; selectedPlan = '';
+  data.duration = '90'; selectedPlan = ''; savedPlanText = '';
+  chatHistory.length = 0;
   document.querySelectorAll('.option-btn.selected').forEach(b => b.classList.remove('selected'));
   document.querySelectorAll('.feedback.show').forEach(f => f.classList.remove('show'));
   document.querySelectorAll('.pricing-card.selected').forEach(c => c.classList.remove('selected'));
@@ -1488,6 +1747,10 @@ function restart() {
   });
   document.querySelectorAll('.card[id^="step-"]').forEach(c => c.classList.add('hidden'));
   document.getElementById('step-0').classList.remove('hidden');
+  document.getElementById('chat-btn').classList.remove('visible');
+  document.getElementById('chat-overlay').classList.remove('open');
+  const vipSection = document.querySelector('.vip-section');
+  if (vipSection) vipSection.remove();
   currentStep = 0;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1496,18 +1759,29 @@ function restart() {
 //  初始化
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-  if (CONFIG.wechatQR) document.getElementById('wechat-qr').innerHTML =
-    '<a href="' + CONFIG.wechatQR + '" target="_blank"><img src="' + CONFIG.wechatQR + '" alt="微信收款码"></a>';
-  if (CONFIG.alipayQR) document.getElementById('alipay-qr').innerHTML =
-    '<a href="' + CONFIG.alipayQR + '" target="_blank"><img src="' + CONFIG.alipayQR + '" alt="支付宝收款码"></a>';
-  if (CONFIG.wechatQR) {
-    const wq = document.getElementById('wechat-qr');
-    if (wq) wq.innerHTML = '<a href="' + CONFIG.wechatQR + '" target="_blank"><img src="' + CONFIG.wechatQR + '" alt="微信收款码"></a>';
-  }
-  if (CONFIG.alipayQR) {
-    const aq = document.getElementById('alipay-qr');
-    if (aq) aq.innerHTML = '<a href="' + CONFIG.alipayQR + '" target="_blank"><img src="' + CONFIG.alipayQR + '" alt="支付宝收款码"></a>';
-  }
+  // 检查是否有已支付的方案（关闭网页再打开直接看）
+  try {
+    const saved = localStorage.getItem('diet_current_state');
+    if (saved) {
+      const state = JSON.parse(saved);
+      if (state.planText && state.planType) {
+        // 恢复数据
+        if (state.userData) Object.assign(data, state.userData);
+        selectedPlan = state.planType;
+        savedPlanText = state.planText;
+        // 直接跳转到结果页
+        document.querySelectorAll('.card[id^="step-"]').forEach(c => c.classList.add('hidden'));
+        document.getElementById('step-9').classList.remove('hidden');
+        const el = document.getElementById('result-content');
+        el.innerHTML = simpleMarkdown(state.planText);
+        if (selectedPlan === 'vip') appendVipSection();
+        return;
+      }
+    }
+  } catch(e) {}
+
+  // 没有保存的方案，显示欢迎页
+  // 不需要额外初始化，页面默认显示 step-0
 });
 </script>
 </body>
