@@ -628,9 +628,15 @@ textarea { resize: vertical; min-height: 70px; }
   <!-- ========== STEP 6: 支付 ========== -->
   <div class="card hidden" id="step-6">
     <h2 class="step-title" style="text-align:center">💳 支付</h2>
-    <p class="step-sub" style="text-align:center">支付完成后即可获取专属方案</p>
+    <p class="step-sub" style="text-align:center">支付完成后输入订单号，验证后获取方案</p>
     <div class="payment-price" id="payment-price-display">¥9.9</div>
     <div class="payment-tip">一杯奶茶的钱，换一个全新的自己 💪</div>
+
+    <div class="payment-order" style="text-align:center;margin:12px 0;padding:12px;background:#f0fdf4;border-radius:10px;border:1px solid #a7f3d0">
+      <div style="font-size:13px;color:#6b7280">本次订单号（支付时填在备注里方便核对）</div>
+      <div id="order-display" style="font-size:20px;font-weight:800;color:#059669;letter-spacing:2px;margin-top:4px"></div>
+    </div>
+
     <div class="payment-qr">
       <div class="payment-method">
         <div class="qr-box" id="wechat-qr">
@@ -649,8 +655,17 @@ textarea { resize: vertical; min-height: 70px; }
         <div class="name">支付宝</div>
       </div>
     </div>
+
+    <div class="form-group" style="margin-top:16px">
+      <label style="text-align:center">👇 支付后，粘贴你的订单号验证</label>
+      <input type="text" id="payment-txid" placeholder="在微信/支付宝账单中复制「商家订单号」粘贴到这里" style="text-align:center">
+      <div style="font-size:12px;color:#9ca3af;text-align:center;margin-top:6px">
+        微信订单号：28位数字，以 420000 开头&nbsp;&nbsp;|&nbsp;&nbsp;支付宝订单号：16位以上数字
+      </div>
+    </div>
+
     <div class="btn-row" style="flex-direction:column">
-      <button class="btn btn-primary" onclick="generatePlan()" style="width:100%">✅ 我已支付，生成方案</button>
+      <button class="btn btn-primary" onclick="validatePayment()" style="width:100%">🔑 验证订单号，生成方案</button>
       <button class="btn btn-secondary" onclick="goStep(5)" style="width:100%;margin-top:8px">← 返回检查信息</button>
     </div>
   </div>
@@ -882,6 +897,8 @@ function goStep(n) {
   }
   document.getElementById(`step-${n}`).classList.remove('hidden');
   if (n === 5) renderReview();
+  // 进入支付页时生成订单号
+  if (n === 6) generateOrderId();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -955,8 +972,42 @@ function renderReview() {
 }
 
 // ============================================================
-//  方案生成
+//  支付验证
 // ============================================================
+let currentOrderId = '';
+
+function generateOrderId() {
+  const now = new Date();
+  const date = now.getFullYear().toString() +
+    String(now.getMonth()+1).padStart(2,'0') +
+    String(now.getDate()).padStart(2,'0');
+  const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+  currentOrderId = 'DIET-' + date + '-' + rand;
+  document.getElementById('order-display').textContent = currentOrderId;
+}
+
+function validatePayment() {
+  const txid = document.getElementById('payment-txid').value.trim();
+  if (!txid) {
+    toast('请先扫描二维码完成支付，然后粘贴订单号');
+    return;
+  }
+  // 移除非数字字符
+  const digits = txid.replace(/\D/g, '');
+  if (digits.length < 16) {
+    toast('订单号格式不正确，请检查是否复制了完整的订单号（至少16位数字）');
+    return;
+  }
+  // 微信支付：28位数字，以420000开头
+  // 支付宝：16-28位数字
+  if (digits.length >= 16 && digits.length <= 30) {
+    // 通过验证，生成方案
+    toast('✅ 订单号验证通过！正在生成方案...');
+    generatePlan();
+  } else {
+    toast('订单号格式不正确，请检查');
+  }
+}
 function buildUserSituation() {
   const w = parseFloat(data.weight), t = parseFloat(data.targetWeight);
   const diff = w - t, days = parseInt(data.duration);
