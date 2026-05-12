@@ -304,9 +304,9 @@ textarea { resize: vertical; min-height: 70px; }
   <!-- ========== STEP 0: Welcome ========== -->
   <div class="card" id="step-0">
     <div class="welcome-icon">💪</div>
-    <h2 class="step-title" style="text-align:center">开启你的蜕变之旅</h2>
+    <h2 class="step-title" style="text-align:center">先评估，后出方案</h2>
     <p style="text-align:center;color:#6b7280;margin-bottom:6px">
-      填写基本信息，选择适合你的套餐
+      完成评估后再选择适合你的套餐
     </p>
     <ul class="welcome-features">
       <li>AI 根据你的生活习惯量身定制</li>
@@ -314,24 +314,31 @@ textarea { resize: vertical; min-height: 70px; }
       <li>选择答案时即时获得专业反馈</li>
     </ul>
 
-    <div class="pricing-grid" style="margin-top:16px">
-      <div class="pricing-card" onclick="preSelectPlan('basic')" style="cursor:default">
-        <span class="badge badge-bronze">🥉 基础版</span>
-        <div class="p-price">¥9.9</div>
-        <div class="p-desc">AI 生成专属减肥方案，可永久查看</div>
-      </div>
-      <div class="pricing-card" onclick="preSelectPlan('pro')" style="cursor:default">
-        <span class="badge badge-silver">🥈 进阶版</span>
-        <div class="p-price">¥29.9</div>
-        <div class="p-desc">方案 + 详细每周食谱 + 跟进调整</div>
-      </div>
-      <div class="pricing-card" onclick="preSelectPlan('vip')" style="cursor:default;border-color:#fbbf24">
-        <span class="popular-tag">🔥 最受欢迎</span>
-        <span class="badge badge-gold">🥇 陪跑版</span>
-        <div class="p-price">¥99</div>
-        <div class="p-desc">1对1 全程陪跑，随时咨询，满30天免费更新方案</div>
-      </div>
+    <div style="background:#f0fdf4;border-radius:14px;padding:16px;margin:12px 0;border:1px solid #a7f3d0">
+      <div style="font-size:14px;font-weight:700;color:#047857;margin-bottom:8px">📝 只需要 4 步</div>
+      <table style="width:100%;font-size:13px;color:#4b5563;border-collapse:collapse">
+        <tr style="border-bottom:1px solid #d1fae5">
+          <td style="padding:6px 0"><strong>①</strong> 基本信息</td>
+          <td style="padding:6px 0;text-align:right">年龄/身高/体重/目标</td>
+        </tr>
+        <tr style="border-bottom:1px solid #d1fae5">
+          <td style="padding:6px 0"><strong>②</strong> 饮食习惯</td>
+          <td style="padding:6px 0;text-align:right">你的日常饮食情况</td>
+        </tr>
+        <tr style="border-bottom:1px solid #d1fae5">
+          <td style="padding:6px 0"><strong>③</strong> 运动习惯</td>
+          <td style="padding:6px 0;text-align:right">运动频率和喜好</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0"><strong>④</strong> 生活与健康</td>
+          <td style="padding:6px 0;text-align:right">作息、压力、健康状况</td>
+        </tr>
+      </table>
     </div>
+
+    <p style="font-size:13px;color:#6b7280;text-align:center;margin-bottom:4px">
+      完成评估后，你可以选择一个适合你的方案获取完整结果
+    </p>
 
     <div class="btn-row">
       <button class="btn btn-primary" onclick="goStep(1)">开始评估 →</button>
@@ -926,10 +933,6 @@ function showFeedback(field, value) {
 // ============================================================
 //  套餐选择
 // ============================================================
-function preSelectPlan(plan) {
-  // Welcome page just shows info, no selection needed
-}
-
 function selectPlan(plan) {
   selectedPlan = plan;
   document.querySelectorAll('.pricing-card').forEach(c => c.classList.remove('selected'));
