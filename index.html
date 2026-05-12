@@ -165,6 +165,7 @@ textarea { resize: vertical; min-height: 70px; }
   font-size: 13px; color: #9ca3af; background: #f9fafb;
 }
 .payment-method .qr-box img { width: 100%; height: 100%; object-fit: contain; border-radius: 10px; }
+.payment-method .qr-box a { display: block; width: 100%; height: 100%; text-decoration: none; }
 .payment-method .name { font-size: 14px; font-weight: 600; margin-top: 6px; color: #374151; }
 .payment-price { text-align: center; font-size: 28px; font-weight: 800; color: #059669; margin-bottom: 2px; }
 .payment-tip { text-align: center; font-size: 13px; color: #9ca3af; margin-bottom: 16px; }
@@ -645,6 +646,7 @@ textarea { resize: vertical; min-height: 70px; }
           <div style="font-size:12px;margin-top:4px">请替换为收款码</div>
         </div>
         <div class="name">微信支付</div>
+        <div style="font-size:12px;color:#10b981;margin-top:4px">👆 点图片放大 → 长按保存</div>
       </div>
       <div class="payment-method">
         <div class="qr-box" id="alipay-qr">
@@ -653,14 +655,22 @@ textarea { resize: vertical; min-height: 70px; }
           <div style="font-size:12px;margin-top:4px">请替换为收款码</div>
         </div>
         <div class="name">支付宝</div>
+        <div style="font-size:12px;color:#10b981;margin-top:4px">👆 点图片放大 → 长按保存</div>
       </div>
+    </div>
+
+    <div style="background:#fff7ed;border-radius:10px;padding:12px 14px;margin:12px 0;border:1px solid #fed7aa;font-size:13px;color:#9a3412">
+      <strong>📱 只有一部手机？这样操作：</strong><br>
+      ① 点击上面的收款码图片 → 长按保存到手机相册<br>
+      ② 打开微信 → 扫一扫 → 右上角「从相册选取」<br>
+      ③ 支付完成后，复制账单里的「商家订单号」粘贴到下面
     </div>
 
     <div class="form-group" style="margin-top:16px">
       <label style="text-align:center">👇 支付后，粘贴你的订单号验证</label>
       <input type="text" id="payment-txid" placeholder="在微信/支付宝账单中复制「商家订单号」粘贴到这里" style="text-align:center">
       <div style="font-size:12px;color:#9ca3af;text-align:center;margin-top:6px">
-        微信订单号：28位数字，以 420000 开头&nbsp;&nbsp;|&nbsp;&nbsp;支付宝订单号：16位以上数字
+        微信/支付宝的「商家订单号」都是纯数字，一般16-30位
       </div>
     </div>
 
@@ -998,10 +1008,7 @@ function validatePayment() {
     toast('订单号格式不正确，请检查是否复制了完整的订单号（至少16位数字）');
     return;
   }
-  // 微信支付：28位数字，以420000开头
-  // 支付宝：16-28位数字
-  if (digits.length >= 16 && digits.length <= 30) {
-    // 通过验证，生成方案
+  if (digits.length >= 16 && digits.length <= 32) {
     toast('✅ 订单号验证通过！正在生成方案...');
     generatePlan();
   } else {
@@ -1374,8 +1381,8 @@ function restart() {
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.welcome-price .amount').textContent = '¥' + CONFIG.price;
   document.getElementById('payment-price-display').textContent = '¥' + CONFIG.price;
-  if (CONFIG.wechatQR) document.getElementById('wechat-qr').innerHTML = '<img src="' + CONFIG.wechatQR + '" alt="微信收款码">';
-  if (CONFIG.alipayQR) document.getElementById('alipay-qr').innerHTML = '<img src="' + CONFIG.alipayQR + '" alt="支付宝收款码">';
+  if (CONFIG.wechatQR) document.getElementById('wechat-qr').innerHTML = '<a href="' + CONFIG.wechatQR + '" target="_blank"><img src="' + CONFIG.wechatQR + '" alt="微信收款码"></a>';
+  if (CONFIG.alipayQR) document.getElementById('alipay-qr').innerHTML = '<a href="' + CONFIG.alipayQR + '" target="_blank"><img src="' + CONFIG.alipayQR + '" alt="支付宝收款码"></a>';
 });
 </script>
 </body>
