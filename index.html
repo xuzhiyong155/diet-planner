@@ -1422,7 +1422,7 @@ function renderPayment() {
       <label style="text-align:center">👇 支付后，粘贴订单号验证</label>
       <input type="text" id="payment-txid" placeholder="在账单中复制「商家订单号」粘贴到这里" style="text-align:center">
       <div style="font-size:12px;color:#9ca3af;text-align:center;margin-top:6px">
-        输入订单号可验证支付，也可以直接生成方案
+        输入支付后收到的真实订单号（16-30位），验证后查看方案
       </div>
     </div>
 
@@ -1458,6 +1458,7 @@ function saveCurrentState() {
       planText: savedPlanText,
       userData: data,
       planType: selectedPlan,
+      paymentVerified: true,
     }));
   } catch(e) {}
 }
@@ -1620,14 +1621,40 @@ function appendVipSection() {
 // ============================================================
 //  支付验证
 // ============================================================
+function getPaymentRecords() {
+  try { return JSON.parse(localStorage.getItem('diet_payments') || '[]'); } catch(e) { return []; }
+}
+function addPaymentRecord(orderId) {
+  const records = getPaymentRecords();
+  records.push({ orderId, plan: selectedPlan, time: Date.now() });
+  localStorage.setItem('diet_payments', JSON.stringify(records));
+}
+
 function validatePayment() {
   const txid = document.getElementById('payment-txid').value.trim();
+
   if (!txid) {
-    toast('正在为你生成方案...');
-    generatePlan();
+    toast('请先完成支付，再粘贴订单号验证');
     return;
   }
-  toast('正在为你生成方案...');
+
+  // 验证格式：支付订单号通常是 16-30 位的字母+数字组合
+  if (!/^[a-zA-Z0-9]{16,30}$/.test(txid)) {
+    toast('订单号格式不正确，请输入16-30位字母或数字（微信/支付宝账单中的订单号）');
+    return;
+  }
+
+  // 检查是否已被使用过
+  const records = getPaymentRecords();
+  if (records.some(r => r.orderId === txid)) {
+    toast('该订单号已被使用过，请确认是否正确');
+    return;
+  }
+
+  // 记录支付
+  addPaymentRecord(txid);
+
+  toast('✅ 验证成功，正在为你生成专属方案...');
   generatePlan();
 }
 
