@@ -574,6 +574,33 @@ textarea { resize: vertical; min-height: 70px; }
       <div class="feedback" id="fb-alcohol"></div>
     </div>
 
+    <!-- 食物拍照分析 -->
+    <div class="form-group" id="food-photo-group">
+      <label>📸 拍一下你的一餐，AI帮你分析热量</label>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:10px">上传食物照片，AI 会自动识别菜品并估算热量（支持 JPG/PNG）</p>
+      <div style="border:2px dashed #d1d5db;border-radius:12px;padding:20px;text-align:center;background:#f9fafb;cursor:pointer" id="upload-zone" onclick="document.getElementById('food-image-input').click()">
+        <div id="upload-placeholder">
+          <div style="font-size:40px;margin-bottom:8px">📷</div>
+          <div style="font-size:14px;color:#6b7280">点击上传食物照片</div>
+          <div style="font-size:12px;color:#9ca3af;margin-top:4px">支持 JPG / PNG</div>
+        </div>
+        <div id="upload-preview" style="display:none">
+          <img id="food-image-preview" style="max-width:100%;max-height:200px;border-radius:8px" alt="食物照片">
+          <div style="margin-top:8px">
+            <span id="food-image-status" style="font-size:13px;color:#059669">✅ 已上传</span>
+            <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;width:auto;margin-left:8px" onclick="event.stopPropagation();clearFoodImage()">重新上传</button>
+          </div>
+        </div>
+        <input type="file" id="food-image-input" accept="image/jpeg,image/png" style="display:none" onchange="handleFoodImage(this)">
+      </div>
+      <div id="food-analysis-result" style="margin-top:10px;display:none">
+        <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:10px;padding:12px;font-size:13px;color:#047857">
+          <strong>🤖 AI 分析结果：</strong>
+          <div id="food-analysis-text" style="margin-top:4px;line-height:1.6"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goStep(1)">← 上一步</button>
       <button class="btn btn-primary" onclick="validateStep2()">下一步 →</button>
@@ -863,7 +890,7 @@ textarea { resize: vertical; min-height: 70px; }
 //  管理员配置
 // ============================================================
 const CONFIG = {
-  apiKey: '',
+  apiKey: 'sk-bd7f5bedfda846c58913ce297ea9291a',
   apiModel: 'qwen-plus',
   // 收款码图片
   wechatQR: 'wechat.jpg',
@@ -978,9 +1005,94 @@ const data = {
   exercisePeriod: '', exerciseLimit: '',
   sleepTime: '', sleepQuality: '', workType: '', stress: '',
   dietHistory: '', support: '', conditions: '',
+  foodImageBase64: '', foodAnalysis: '',
 };
 
 const stepLabels = ['', '基本信息', '饮食习惯', '运动习惯', '生活与健康'];
+
+// ============================================================
+//  食物拍照分析
+// ============================================================
+let isAnalyzingFood = false;
+
+function handleFoodImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // 预览图片
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('upload-placeholder').style.display = 'none';
+    document.getElementById('upload-preview').style.display = 'block';
+    document.getElementById('food-image-preview').src = e.target.result;
+    data.foodImageBase64 = e.target.result;
+
+    // 自动分析图片
+    analyzeFoodImage(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFoodImage() {
+  data.foodImageBase64 = '';
+  data.foodAnalysis = '';
+  document.getElementById('food-image-input').value = '';
+  document.getElementById('upload-placeholder').style.display = 'block';
+  document.getElementById('upload-preview').style.display = 'none';
+  document.getElementById('food-analysis-result').style.display = 'none';
+  document.getElementById('food-analysis-text').innerHTML = '';
+  isAnalyzingFood = false;
+}
+
+async function analyzeFoodImage(imageDataUrl) {
+  if (!CONFIG.apiKey) {
+    document.getElementById('food-analysis-result').style.display = 'block';
+    document.getElementById('food-analysis-text').innerHTML = '⚠️ 未配置 API Key，无法分析图片';
+    return;
+  }
+
+  if (isAnalyzingFood) return;
+  isAnalyzingFood = true;
+
+  document.getElementById('food-analysis-result').style.display = 'block';
+  document.getElementById('food-analysis-text').innerHTML = '⏳ AI 正在分析你的食物……';
+
+  try {
+    const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + CONFIG.apiKey,
+      },
+      body: JSON.stringify({
+        model: 'qwen-vl-plus',
+        input: {
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { image: imageDataUrl },
+                { text: '请识别这张图片中的食物，估算总热量（千卡/大卡），并给出蛋白质/碳水/脂肪的大致比例。用简短的中文回答，格式：食物名称 → 总热量 → 营养比例。如果看不清请如实说。' }
+              ]
+            }
+          ]
+        },
+        parameters: { result_format: 'message' }
+      }),
+    });
+
+    if (!response.ok) throw new Error('API 请求失败');
+    const result = await response.json();
+    const text = result.output.choices[0].message.content;
+
+    data.foodAnalysis = text;
+    document.getElementById('food-analysis-text').innerHTML = text.replace(/\n/g, '<br>');
+  } catch (err) {
+    document.getElementById('food-analysis-text').innerHTML = '⚠️ 分析失败：' + err.message + '。请稍后重试。';
+  } finally {
+    isAnalyzingFood = false;
+  }
+}
 
 // ============================================================
 //  工具函数
@@ -1451,6 +1563,7 @@ function buildUserSituation() {
     workType: data.workType, stress: data.stress || '一般',
     dietHistory: data.dietHistory, support: data.support || '未说明',
     conditions: data.conditions || '无',
+    foodAnalysis: data.foodAnalysis || '',
   };
 }
 
@@ -1477,6 +1590,9 @@ function buildPrompt(s) {
 作息：${s.sleepTime}，睡眠质量：${s.sleepQuality}，工作：${s.workType}
 压力：${s.stress}，减肥经历：${s.dietHistory}，伙伴：${s.support}
 健康：${s.conditions}
+
+=== 食物拍照分析 ===
+${s.foodAnalysis || '用户未上传食物照片'}
 
 要求：
 1. 先写【个人分析】- 针对饮食、运动、生活习惯分别评价，好的表扬，不好的给建议。
@@ -1553,6 +1669,11 @@ function generateLocalPlan(s) {
 
   return `<div class="result-analysis"><h3>📝 个人分析</h3>
 ${analysis.replace(/\n\n/g, '</p><p>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</div>
+
+${s.foodAnalysis ? `
+<div class="result-section"><h3><span class="emoji">📸</span> 食物拍照分析</h3>
+<p>${s.foodAnalysis.replace(/\n/g, '<br>')}</p>
+</div>` : ''}
 
 <div class="result-section"><h3><span class="emoji">📊</span> 核心数据</h3>
 <table>
