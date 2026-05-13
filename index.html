@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -790,12 +790,13 @@ textarea { resize: vertical; min-height: 70px; }
       <!-- 进阶版 -->
       <div class="pricing-card" id="plan-pro" onclick="selectPlan('pro')">
         <span class="badge badge-silver">🥈 进阶版</span>
-        <div class="p-name">方案+食谱+跟进</div>
+        <div class="p-name">方案+食谱+AI拍照分析</div>
         <div class="p-price">¥29.9</div>
         <div class="p-desc">适合想要更详细指导的你</div>
         <ul class="p-features">
           <li>包含基础版所有内容</li>
           <li>详细每周食谱示例</li>
+          <li>📸 AI拍照分析食物热量</li>
           <li>每周跟进调整建议</li>
           <li>阶段性方案优化</li>
         </ul>
@@ -805,13 +806,14 @@ textarea { resize: vertical; min-height: 70px; }
       <div class="pricing-card" id="plan-vip" onclick="selectPlan('vip')" style="border-color:#fbbf24">
         <span class="popular-tag">🔥 最受欢迎</span>
         <span class="badge badge-gold">🥇 陪跑版</span>
-        <div class="p-name">1对1全程陪跑</div>
+        <div class="p-name">1对1全程陪跑+AI拍照分析</div>
         <div class="p-price">¥99</div>
         <div class="p-desc">适合需要监督和个性化指导的你</div>
         <ul class="p-features">
           <li>包含进阶版所有内容</li>
           <li>1对1 微信私人指导</li>
-          <li>随时提问，随时解答</li>
+          <li>📸 AI拍照分析食物热量</li>
+\t          <li>随时提问，随时解答</li>
           <li>满30天免费更新方案</li>
           <li>饮食/运动实时调整</li>
         </ul>
@@ -1329,12 +1331,12 @@ function renderPayment() {
       <label style="text-align:center">👇 支付后，粘贴订单号验证</label>
       <input type="text" id="payment-txid" placeholder="在账单中复制「商家订单号」粘贴到这里" style="text-align:center">
       <div style="font-size:12px;color:#9ca3af;text-align:center;margin-top:6px">
-        微信/支付宝的「商家订单号」都是纯数字，16-30位
+        输入订单号可验证支付，也可以直接生成方案
       </div>
     </div>
 
     <div class="btn-row" style="flex-direction:column">
-      <button class="btn btn-primary" onclick="validatePayment()" style="width:100%">🔑 验证订单号，生成方案</button>
+      <button class="btn btn-primary" onclick="validatePayment()" style="width:100%">🔑 生成方案</button>
       <button class="btn btn-secondary" onclick="goStep(6)" style="width:100%;margin-top:8px">← 返回选择套餐</button>
     </div>
   `;
@@ -1529,13 +1531,12 @@ function appendVipSection() {
 // ============================================================
 function validatePayment() {
   const txid = document.getElementById('payment-txid').value.trim();
-  if (!txid) { toast('请先扫码支付，然后粘贴订单号'); return; }
-  const digits = txid.replace(/\D/g, '');
-  if (digits.length < 16 || digits.length > 32) {
-    toast('订单号格式不正确，请检查是否复制了完整的订单号（16-30位数字）');
+  if (!txid) {
+    toast('正在为你生成方案...');
+    generatePlan();
     return;
   }
-  toast('✅ 订单号验证通过！正在生成方案...');
+  toast('正在为你生成方案...');
   generatePlan();
 }
 
