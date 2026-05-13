@@ -506,6 +506,12 @@ details summary:hover { color: #059669; }
       <div class="feedback" id="fb-reason"></div>
     </div>
 
+    <div class="form-group" style="border:2px solid #f59e0b;border-radius:12px;padding:16px;background:#fffbeb;margin-top:6px">
+      <label style="font-size:16px;color:#92400e">🎯 你最想达到什么样的目标或需求？</label>
+      <p style="font-size:13px;color:#b45309;margin:-4px 0 10px 0">告诉我你的具体想法，我会根据这个目标为你量身定制饮食和运动方案！<br>（例如：想瘦肚子 / 想练出腹肌 / 想改善体检指标 / 想穿婚纱好看 / 想提升运动表现… 不填也可以）</p>
+      <textarea id="goal" rows="3" placeholder="例：我想把肚子减掉，练出腹肌线条，同时希望精力变得更好，不再那么容易累。&#10;&#10;不写也没关系，我会根据你的其他信息来制定方案。" oninput="saveField('goal',this.value)" style="border-color:#f59e0b;font-size:14px"></textarea>
+    </div>
+
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goStep(0)">← 返回</button>
       <button class="btn btn-primary" onclick="validateStep1()">下一步 →</button>
@@ -1196,6 +1202,7 @@ const data = {
   exercisePeriod: '', exerciseLimit: '',
   sleepTime: '', sleepQuality: '', workType: '', stress: '',
   dietHistory: '', support: '', conditions: '',
+  goal: '',
 };
 
 const stepLabels = ['', '基本信息', '饮食习惯', '运动习惯', '生活与健康'];
@@ -1501,7 +1508,7 @@ function validateStep4() {
 function renderReview() {
   const map = {
     gender:'性别',age:'年龄',height:'身高',weight:'体重',targetWeight:'目标体重',
-    waist:'腰围',duration:'周期（天）',reason:'减肥原因',
+    waist:'腰围',duration:'周期（天）',reason:'减肥原因',goal:'🎯 核心目标',
     cooking:'吃饭方式',cuisine:'口味偏好',veggies:'蔬菜摄入',
     sweetDrinks:'含糖饮料',snacks:'宵夜习惯',water:'饮水量',alcohol:'饮酒',
     meals:'一天几顿',allergies:'食物过敏',
@@ -1511,7 +1518,7 @@ function renderReview() {
     stress:'工作压力',dietHistory:'减肥经历',support:'减肥伙伴',conditions:'健康状况',
   };
   const sections = [
-    { title:'📋 基本信息', keys:['gender','age','height','weight','targetWeight','waist','duration','reason'] },
+    { title:'📋 基本信息', keys:['goal','gender','age','height','weight','targetWeight','waist','duration','reason'] },
     { title:'🍽️ 饮食情况', keys:['cooking','meals','cuisine','veggies','sweetDrinks','snacks','water','alcohol','allergies'] },
     { title:'🏃 运动情况', keys:['exerciseFreq','exerciseAttitude','exerciseType','exerciseTime','exercisePeriod','exerciseLimit'] },
     { title:'🌙 生活与健康', keys:['sleepTime','sleepQuality','workType','stress','dietHistory','support','conditions'] },
@@ -2032,6 +2039,7 @@ function buildUserSituation() {
     targetLoss: diff.toFixed(1) + 'kg', duration: days + '天',
     weeklyTarget: weekly + 'kg/周', plan: PLANS[selectedPlan]?.name || '基础版',
     waist: data.waist || '未测量', reason: data.reason || '未说明',
+    goal: data.goal || '未说明',
     cooking: data.cooking, cuisine: data.cuisine, veggies: data.veggies,
     sweetDrinks: data.sweetDrinks, snacks: data.snacks,
     water: data.water, alcohol: data.alcohol || '未说明',
@@ -2056,6 +2064,7 @@ function buildPrompt(s) {
 性别：${s.gender}，年龄：${s.age}，身高：${s.height}
 当前体重：${s.weight}，目标体重：${s.targetWeight}，需减：${s.targetLoss}
 周期：${s.duration}，腰围：${s.waist}，减肥原因：${s.reason}
+核心目标：${s.goal}
 
 === 饮食 ===
 吃饭方式：${s.cooking}，一天几顿：${s.meals}，口味：${s.cuisine}，蔬菜：${s.veggies}
@@ -2077,7 +2086,8 @@ function buildPrompt(s) {
 要求：
 1. 先写【个人分析】- 针对饮食、运动、生活习惯分别评价，好的表扬，不好的给建议。
 2. 然后按结构输出：核心数据、饮食方案、运动方案、一周食谱示例、应对策略、进度追踪。
-3. 用中文、markdown格式，语气温暖鼓励。`;
+3. 用中文、markdown格式，语气温暖鼓励。
+4. 【特别重要】如果用户填写了"核心目标"，请围绕这个目标来制定方案，让饮食和运动都服务于这个目标。如果用户未填写，则根据其他信息来制定。`;
 }
 
 // ============================================================
@@ -2126,6 +2136,8 @@ function generateAnalysis(s) {
   if (s.dietHistory === '成功过但反弹了') parts.push('**🔁 减肥经历：** 你之前成功过，说明有能力！这次我们一起解决保持的问题。');
   else if (s.dietHistory === '减过但失败了') parts.push('**💪 减肥经历：** 失败过不代表你不行，这次换一种更适合你的方式。');
   else parts.push('**🌟 减肥经历：** 第一次减肥？从一开始就用正确的方法，少走弯路！');
+
+  if (s.goal && s.goal !== '未说明') parts.push(`**🎯 你的核心目标：** ${s.goal}。接下来的方案会重点围绕这个目标来制定！`);
 
   return parts.join('\n\n');
 }
