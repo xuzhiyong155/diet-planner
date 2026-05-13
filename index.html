@@ -827,7 +827,7 @@ details summary:hover { color: #059669; }
           <li>包含进阶版所有内容</li>
           <li>1对1 微信私人指导</li>
           <li>📸 AI拍照分析食物热量</li>
-\t          <li>随时提问，随时解答</li>
+          <li>随时提问，随时解答</li>
           <li>满30天免费更新方案</li>
           <li>饮食/运动实时调整</li>
         </ul>
@@ -858,6 +858,7 @@ details summary:hover { color: #059669; }
         <li id="ld-4">生成个性化食谱</li>
         <li id="ld-5">整理应对策略</li>
       </ul>
+      <p style="color:#f59e0b;font-size:13px;margin-top:12px;background:#fffbeb;padding:8px 14px;border-radius:8px;border:1px solid #fde68a">⏰ AI 生成方案约需 1-3 分钟，请耐心等待，不要关闭页面...</p>
     </div>
   </div>
 
@@ -1234,6 +1235,54 @@ function clearResultFood() {
   document.getElementById('result-upload-placeholder').style.display = 'block';
   document.getElementById('result-upload-preview').style.display = 'none';
   document.getElementById('result-analysis-status').style.display = 'none';
+  // 清除保存的图片（保留历史记录）
+  try {
+    const saved = JSON.parse(localStorage.getItem('diet_food_data') || '{}');
+    saved.currentImage = '';
+    localStorage.setItem('diet_food_data', JSON.stringify(saved));
+  } catch(e) {}
+}
+
+// 持久化保存食物分析数据
+function saveFoodAnalysisData() {
+  try {
+    const historyDiv = document.getElementById('result-analysis-history');
+    const items = [];
+    historyDiv.querySelectorAll('.food-analysis-item').forEach(function(el) {
+      items.push({ time: el.dataset.time, text: el.dataset.text });
+    });
+    const data = {
+      history: items,
+      currentImage: resultFoodImageBase64 || ''
+    };
+    localStorage.setItem('diet_food_data', JSON.stringify(data));
+  } catch(e) {}
+}
+
+// 恢复食物分析数据
+function loadFoodAnalysisData() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('diet_food_data') || '{}');
+    if (saved.history && saved.history.length > 0) {
+      const historyDiv = document.getElementById('result-analysis-history');
+      saved.history.forEach(function(item) {
+        const card = document.createElement('div');
+        card.className = 'food-analysis-item';
+        card.dataset.time = item.time;
+        card.dataset.text = item.text;
+        card.style.cssText = 'background:#f0fdf4;border:1px solid #a7f3d0;border-radius:12px;padding:14px;margin-bottom:10px';
+        card.innerHTML = '<div style="font-size:12px;color:#9ca3af;margin-bottom:6px">📸 ' + item.time + '</div>' +
+          '<div style="font-size:14px;line-height:1.7;color:#047857">' + item.text.replace(/\n/g, '<br>') + '</div>';
+        historyDiv.appendChild(card);
+      });
+    }
+    if (saved.currentImage) {
+      resultFoodImageBase64 = saved.currentImage;
+      document.getElementById('result-upload-placeholder').style.display = 'none';
+      document.getElementById('result-upload-preview').style.display = 'block';
+      document.getElementById('result-food-preview').src = saved.currentImage;
+    }
+  } catch(e) {}
 }
 
 async function analyzeResultFood() {
@@ -1300,10 +1349,15 @@ async function analyzeResultFood() {
     const historyDiv = document.getElementById('result-analysis-history');
     const timeStr = new Date().toLocaleString();
     const resultCard = document.createElement('div');
+    resultCard.className = 'food-analysis-item';
+    resultCard.dataset.time = timeStr;
+    resultCard.dataset.text = text;
     resultCard.style.cssText = 'background:#f0fdf4;border:1px solid #a7f3d0;border-radius:12px;padding:14px;margin-bottom:10px';
     resultCard.innerHTML = '<div style="font-size:12px;color:#9ca3af;margin-bottom:6px">📸 ' + timeStr + '</div>' +
       '<div style="font-size:14px;line-height:1.7;color:#047857">' + text.replace(/\n/g, '<br>') + '</div>';
     historyDiv.insertBefore(resultCard, historyDiv.firstChild);
+    // 持久化保存分析历史
+    saveFoodAnalysisData();
 
     document.getElementById('result-analysis-status').innerHTML = '✅ 分析完成';
     setTimeout(() => { document.getElementById('result-analysis-status').style.display = 'none'; }, 2000);
@@ -2241,6 +2295,7 @@ function showResult(text, fromSaved) {
     // 进阶版/陪跑版显示食物拍照分析
   if (selectedPlan === 'pro' || selectedPlan === 'vip') {
     document.getElementById('step-food-analyzer').classList.remove('hidden');
+    loadFoodAnalysisData();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2289,6 +2344,8 @@ function restart() {
   Object.keys(data).forEach(k => { if (Array.isArray(data[k])) data[k] = []; else data[k] = ''; });
   data.duration = '90'; selectedPlan = ''; savedPlanText = '';
   chatHistory.length = 0;
+  // 清空食物分析历史
+  localStorage.removeItem('diet_food_data');
   document.querySelectorAll('.option-btn.selected').forEach(b => b.classList.remove('selected'));
   document.querySelectorAll('.feedback.show').forEach(f => f.classList.remove('show'));
   document.querySelectorAll('.pricing-card.selected').forEach(c => c.classList.remove('selected'));
@@ -2361,6 +2418,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const el = document.getElementById('result-content');
         el.innerHTML = simpleMarkdown(state.planText);
         if (selectedPlan === 'vip') appendVipSection();
+        // 恢复食物拍照分析
+        if (selectedPlan === 'pro' || selectedPlan === 'vip') {
+          document.getElementById('step-food-analyzer').classList.remove('hidden');
+          loadFoodAnalysisData();
+        }
         return;
       }
     }
