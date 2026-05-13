@@ -195,6 +195,19 @@ textarea { resize: vertical; min-height: 70px; }
 .payment-price { text-align: center; font-size: 28px; font-weight: 800; color: #059669; margin-bottom: 2px; }
 .payment-tip { text-align: center; font-size: 13px; color: #9ca3af; margin-bottom: 16px; }
 
+/* PayJS 在线支付 */
+.payjs-section {
+  background: #f0fdf4; border: 2px solid #a7f3d0; border-radius: 14px;
+  padding: 20px; margin: 12px 0; text-align: center;
+}
+.payjs-badge {
+  display: inline-block; background: #059669; color: #fff;
+  padding: 4px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  margin-bottom: 8px;
+}
+details summary { font-size: 13px; color: #6b7280; }
+details summary:hover { color: #059669; }
+
 /* WeChat contact card */
 .wechat-card {
   text-align: center; padding: 24px 16px;
@@ -926,6 +939,9 @@ const CONFIG = {
   alipayQR: 'alipay.jpg',
   // 你的微信号（陪跑版用）
   wechatId: 'Xkk99ing',
+  // PayJS 支付（去 payjs.cn 注册获取，填写后启用在线支付）
+  payjsMchid: '',  // 商户号（留空则使用手动收款码模式）
+  payjsKey: '',    // 通信密钥
 };
 
 const PLANS = {
@@ -933,6 +949,120 @@ const PLANS = {
   pro:   { name: '进阶版', price: 29.9, label: '🥈 进阶版' },
   vip:   { name: '陪跑版', price: 99, label: '🥇 陪跑版' },
 };
+
+// ============================================================
+//  MD5 实现（用于 PayJS 签名）
+//  来源：blueimp/JavaScript-MD5 (MIT License)
+// ============================================================
+function md5(s) {
+  function md5cycle(x, k) {
+    var a = x[0], b = x[1], c = x[2], d = x[3];
+    function R(s, t) { return (s << t) | (s >>> (32 - t)); }
+    function F(a, b, c, d, x, s, t) {
+      return R(((a + ((b & c) | (~b & d)) + x + t) >>> 0), s) + b >>> 0;
+    }
+    function G(a, b, c, d, x, s, t) {
+      return R(((a + ((b & d) | (c & ~d)) + x + t) >>> 0), s) + b >>> 0;
+    }
+    function H(a, b, c, d, x, s, t) {
+      return R(((a + (b ^ c ^ d) + x + t) >>> 0), s) + b >>> 0;
+    }
+    function I(a, b, c, d, x, s, t) {
+      return R(((a + (c ^ (b | ~d)) + x + t) >>> 0), s) + b >>> 0;
+    }
+    // Round 1
+    a = F(a, b, c, d, k[0],  7, 3614090360); d = F(d, a, b, c, k[1],  12, 3905402710);
+    c = F(c, d, a, b, k[2],  17, 606105819);  b = F(b, c, d, a, k[3],  22, 3250441966);
+    a = F(a, b, c, d, k[4],  7, 4118548399); d = F(d, a, b, c, k[5],  12, 1200080426);
+    c = F(c, d, a, b, k[6],  17, 2821735955); b = F(b, c, d, a, k[7],  22, 4249261313);
+    a = F(a, b, c, d, k[8],  7, 1770035416); d = F(d, a, b, c, k[9],  12, 2336552879);
+    c = F(c, d, a, b, k[10], 17, 4294925233); b = F(b, c, d, a, k[11], 22, 2304563134);
+    a = F(a, b, c, d, k[12], 7, 1804603682); d = F(d, a, b, c, k[13], 12, 4254626195);
+    c = F(c, d, a, b, k[14], 17, 2792965006); b = F(b, c, d, a, k[15], 22, 1236535329);
+    // Round 2
+    a = G(a, b, c, d, k[1],  5, 4129170786); d = G(d, a, b, c, k[6],  9, 3225465664);
+    c = G(c, d, a, b, k[11], 14, 643717713);  b = G(b, c, d, a, k[0],  20, 3921069994);
+    a = G(a, b, c, d, k[5],  5, 3593408605); d = G(d, a, b, c, k[10], 9, 38016083);
+    c = G(c, d, a, b, k[15], 14, 3634488961); b = G(b, c, d, a, k[4],  20, 3889429448);
+    a = G(a, b, c, d, k[9],  5, 568446438);  d = G(d, a, b, c, k[14], 9, 3275163606);
+    c = G(c, d, a, b, k[3],  14, 4107603335); b = G(b, c, d, a, k[8],  20, 1163531501);
+    a = G(a, b, c, d, k[13], 5, 2850285829); d = G(d, a, b, c, k[2],  9, 4243563512);
+    c = G(c, d, a, b, k[7],  14, 1735328473); b = G(b, c, d, a, k[12], 20, 2368359562);
+    // Round 3
+    a = H(a, b, c, d, k[5],  4, 4294588738); d = H(d, a, b, c, k[8],  11, 2272392833);
+    c = H(c, d, a, b, k[11], 16, 1839030562); b = H(b, c, d, a, k[14], 23, 4259657740);
+    a = H(a, b, c, d, k[1],  4, 2763975236); d = H(d, a, b, c, k[4],  11, 1272893353);
+    c = H(c, d, a, b, k[7],  16, 4139469664); b = H(b, c, d, a, k[10], 23, 3200236656);
+    a = H(a, b, c, d, k[13], 4, 681279174);  d = H(d, a, b, c, k[0],  11, 3936430074);
+    c = H(c, d, a, b, k[3],  16, 3572445317); b = H(b, c, d, a, k[6],  23, 76029189);
+    a = H(a, b, c, d, k[9],  4, 3654602809); d = H(d, a, b, c, k[12], 11, 3873151461);
+    c = H(c, d, a, b, k[15], 16, 530742520);  b = H(b, c, d, a, k[2],  23, 3299628645);
+    // Round 4
+    a = I(a, b, c, d, k[0],  6, 4096336452); d = I(d, a, b, c, k[7],  10, 1126891415);
+    c = I(c, d, a, b, k[14], 15, 2878612391); b = I(b, c, d, a, k[5],  21, 4237533241);
+    a = I(a, b, c, d, k[12], 6, 1700485571); d = I(d, a, b, c, k[3],  10, 2399980690);
+    c = I(c, d, a, b, k[10], 15, 4293915773); b = I(b, c, d, a, k[1],  21, 2240044497);
+    a = I(a, b, c, d, k[8],  6, 1873313359); d = I(d, a, b, c, k[15], 10, 4264355552);
+    c = I(c, d, a, b, k[6],  15, 2734768916); b = I(b, c, d, a, k[13], 21, 1309151649);
+    a = I(a, b, c, d, k[4],  6, 4149444226); d = I(d, a, b, c, k[11], 10, 3174756917);
+    c = I(c, d, a, b, k[2],  15, 718787259);  b = I(b, c, d, a, k[9],  21, 3951481745);
+    x[0] = (x[0] + a) >>> 0; x[1] = (x[1] + b) >>> 0;
+    x[2] = (x[2] + c) >>> 0; x[3] = (x[3] + d) >>> 0;
+  }
+  s = unescape(encodeURIComponent(s));
+  var n = s.length, bits = [], i;
+  var wordCount = (((n + 8) >> 6) + 1) << 4;
+  for (i = 0; i < wordCount; i++) bits[i] = 0;
+  for (i = 0; i < n; i++) bits[i >> 2] |= s.charCodeAt(i) << ((i % 4) * 8);
+  bits[n >> 2] |= 0x80 << ((n % 4) * 8);
+  bits[wordCount - 2] = n * 8;
+  var h = [1732584193, 4023233417, 2562383102, 271733878];
+  for (i = 0; i < bits.length; i += 16) md5cycle(h, bits.slice(i, i + 16));
+  // Format hex
+  var hex = '0123456789abcdef';
+  return h.map(function(v) {
+    return hex.charAt((v >> 4) & 15) + hex.charAt(v & 15) +
+           hex.charAt((v >> 12) & 15) + hex.charAt((v >> 8) & 15) +
+           hex.charAt((v >> 20) & 15) + hex.charAt((v >> 16) & 15) +
+           hex.charAt((v >> 28) & 15) + hex.charAt((v >> 24) & 15);
+  }).join('');
+}
+
+// ============================================================
+//  PayJS 支付
+// ============================================================
+function payjsSign(params) {
+  const keys = Object.keys(params).sort();
+  const str = keys.map(k => `${k}=${params[k]}`).join('&') + `&key=${CONFIG.payjsKey}`;
+  return md5(str).toUpperCase();
+}
+
+function startPayJSPayment() {
+  const plan = PLANS[selectedPlan];
+  if (!plan) { toast('请先选择套餐'); return; }
+  generateOrderId();
+  const outTradeNo = currentOrderId;
+  const totalFee = Math.round(plan.price * 100);
+  const baseUrl = window.location.href.split('?')[0].split('#')[0];
+  const params = {
+    mchid: CONFIG.payjsMchid,
+    total_fee: totalFee,
+    out_trade_no: outTradeNo,
+    notify_url: baseUrl,
+    redirect_url: baseUrl,
+  };
+  params.sign = payjsSign(params);
+  // 保存用户数据，支付跳转回来后恢复
+  try {
+    localStorage.setItem('diet_pending_payment', JSON.stringify({
+      userData: { ...data, exerciseType: data.exerciseType },
+      selectedPlan: selectedPlan,
+      outTradeNo: outTradeNo,
+    }));
+  } catch(e) {}
+  const query = Object.keys(params).map(k => `${k}=${encodeURIComponent(params[k])}`).join('&');
+  window.location.href = `https://payjs.cn/api/cashier?${query}`;
+}
 
 // ============================================================
 //  反馈/鼓励
@@ -1356,7 +1486,8 @@ function generateOrderId() {
   const date = now.getFullYear().toString() +
     String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
   const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
-  currentOrderId = 'DIET-' + date + '-' + rand;
+  const seq = String(Date.now()).slice(-4);
+  currentOrderId = 'DIET-' + date + '-' + rand + seq;
 }
 
 function renderPayment() {
@@ -1364,8 +1495,6 @@ function renderPayment() {
   if (!plan) { toast('请先选择套餐'); goStep(6); return; }
 
   const container = document.getElementById('payment-content');
-
-  // 所有方案统一走 QR 码支付
   generateOrderId();
 
   const vipExtras = selectedPlan === 'vip' ? `
@@ -1382,61 +1511,125 @@ function renderPayment() {
     </div>
   `;
 
-  container.innerHTML = `
+  let html = `
     <h2 class="step-title" style="text-align:center">${plan.label} · ¥${plan.price}</h2>
-    <p class="step-sub" style="text-align:center">扫码支付后输入订单号验证</p>
     <div class="payment-price">¥${plan.price}</div>
     <div class="payment-tip">支付后永久查看，随时可用</div>
-
     ${vipExtras}
-
-    <div class="payment-qr">
-      <div class="payment-method">
-        <div class="qr-box" id="pay-wechat-qr">
-          <div style="font-size:36px;margin-bottom:6px">💚</div>
-          <div>微信支付</div>
-          <div style="font-size:12px;margin-top:4px">请替换为收款码</div>
-        </div>
-        <div class="name">微信支付</div>
-        <div style="font-size:12px;color:#10b981;margin-top:4px">👆 点图片放大 → 长按保存</div>
-      </div>
-      <div class="payment-method">
-        <div class="qr-box" id="pay-alipay-qr">
-          <div style="font-size:36px;margin-bottom:6px">💙</div>
-          <div>支付宝</div>
-          <div style="font-size:12px;margin-top:4px">请替换为收款码</div>
-        </div>
-        <div class="name">支付宝</div>
-        <div style="font-size:12px;color:#10b981;margin-top:4px">👆 点图片放大 → 长按保存</div>
-      </div>
-    </div>
-
-    <div style="background:#fff7ed;border-radius:10px;padding:12px 14px;margin:12px 0;border:1px solid #fed7aa;font-size:13px;color:#9a3412">
-      <strong>📱 只有一部手机？</strong><br>
-      ① 点击上面的收款码 → 长按保存到相册<br>
-      ② 打开微信/支付宝 → 扫一扫 → 从相册选取<br>
-      ③ 支付后，复制账单里的「商家订单号」粘贴到下面
-    </div>
-
-    <div class="form-group" style="margin-top:8px">
-      <label style="text-align:center">👇 支付后，粘贴订单号验证</label>
-      <input type="text" id="payment-txid" placeholder="在账单中复制「商家订单号」粘贴到这里" style="text-align:center">
-      <div style="font-size:12px;color:#9ca3af;text-align:center;margin-top:6px">
-        输入支付后收到的真实订单号（16-30位），验证后查看方案
-      </div>
-    </div>
-
-    <div class="btn-row" style="flex-direction:column">
-      <button class="btn btn-primary" onclick="validatePayment()" style="width:100%">🔑 生成方案</button>
-      <button class="btn btn-secondary" onclick="goStep(6)" style="width:100%;margin-top:8px">← 返回选择套餐</button>
-    </div>
   `;
 
+  if (CONFIG.payjsMchid) {
+    // === PayJS 在线支付模式 ===
+    html += `
+      <div class="payjs-section">
+        <div class="payjs-badge">🔒 安全在线支付</div>
+        <div style="display:flex;gap:20px;justify-content:center;margin:12px 0;font-size:28px">
+          <span style="background:#e8f5e9;padding:8px 16px;border-radius:8px">💚 微信</span>
+          <span style="background:#e3f2fd;padding:8px 16px;border-radius:8px">💙 支付宝</span>
+        </div>
+        <p style="font-size:13px;color:#6b7280;text-align:center">由 PayJS 安全支付网关处理，无需手动输入订单号</p>
+        <button class="btn btn-primary" onclick="startPayJSPayment()" style="width:100%;padding:16px;font-size:18px;margin-top:8px">
+          💳 立即支付 ¥${plan.price}
+        </button>
+        <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:8px">
+          支付完成后自动跳回本页面，方案即时生成
+        </p>
+      </div>
+      <details style="margin-top:12px;font-size:13px;color:#9ca3af">
+        <summary style="cursor:pointer;text-align:center">💡 支付遇到问题？点此查看手动付款方式</summary>
+        <div style="margin-top:8px;padding:12px;background:#fff7ed;border-radius:8px;border:1px solid #fed7aa;color:#9a3412">
+          <p style="font-weight:600;margin-bottom:6px">📱 手动扫码支付（备用）</p>
+          <div class="payment-qr" style="border:none;padding:0">
+            <div class="payment-method">
+              <div class="qr-box" id="pay-wechat-qr" style="padding:16px">
+                <div style="font-size:36px;margin-bottom:6px">💚</div>
+                <div style="font-size:12px">微信收款码</div>
+              </div>
+            </div>
+            <div class="payment-method">
+              <div class="qr-box" id="pay-alipay-qr" style="padding:16px">
+                <div style="font-size:36px;margin-bottom:6px">💙</div>
+                <div style="font-size:12px">支付宝收款码</div>
+              </div>
+            </div>
+          </div>
+          <p style="margin-top:6px">长按保存收款码 → 打开微信/支付宝扫码 → 支付后粘贴订单号验证</p>
+          <div class="form-group" style="margin-top:6px">
+            <input type="text" id="payment-txid" placeholder="粘贴订单号验证（手动付款用）" style="text-align:center;font-size:13px">
+          </div>
+          <button class="btn btn-outline" onclick="validatePayment()" style="width:100%;margin-top:6px">🔑 验证并生成方案</button>
+        </div>
+      </details>
+    `;
+  } else {
+    // === 手动收款码模式（PayJS 未配置） ===
+    const refCode = currentOrderId;
+    html += `
+      <p class="step-sub" style="text-align:center">扫码支付后粘贴订单号验证</p>
+      <div style="background:#eff6ff;border:2px dashed #93c5fd;border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
+        <div style="font-size:13px;color:#1e40af;font-weight:600">📋 转账请填写此单号</div>
+        <div style="font-size:22px;font-weight:800;color:#1d4ed8;letter-spacing:2px;padding:8px 12px;background:#fff;border-radius:8px;margin-top:4px;font-family:monospace">${refCode}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:6px">⚠️ <strong>转账时在备注里输入这个号</strong>，方便人工核对</div>
+      </div>
+      <div class="payment-qr">
+        <div class="payment-method">
+          <div class="qr-box" id="pay-wechat-qr">
+            <div style="font-size:36px;margin-bottom:6px">💚</div>
+            <div>微信支付</div>
+            <div style="font-size:12px;margin-top:4px">请替换为收款码</div>
+          </div>
+          <div class="name">微信支付</div>
+          <div style="font-size:12px;color:#10b981;margin-top:4px">👆 点图片放大 → 长按保存</div>
+        </div>
+        <div class="payment-method">
+          <div class="qr-box" id="pay-alipay-qr">
+            <div style="font-size:36px;margin-bottom:6px">💙</div>
+            <div>支付宝</div>
+            <div style="font-size:12px;margin-top:4px">请替换为收款码</div>
+          </div>
+          <div class="name">支付宝</div>
+          <div style="font-size:12px;color:#10b981;margin-top:4px">👆 点图片放大 → 长按保存</div>
+        </div>
+      </div>
+      <div style="background:#fff7ed;border-radius:10px;padding:12px 14px;margin:12px 0;border:1px solid #fed7aa;font-size:13px;color:#9a3412">
+        <strong>📱 付款步骤</strong><br>
+        ① 点击上面的收款码 → 长按保存到相册<br>
+        ② 打开微信/支付宝 → 扫一扫 → 从相册选取<br>
+        ③ <strong>转账时在备注里输入上方的订单参考号</strong><br>
+        ④ 支付完成后，复制账单里的「商家订单号」粘贴到下面验证
+      </div>
+      <div style="background:#f0fdf4;border-radius:10px;padding:10px 14px;margin:12px 0;border:1px solid #a7f3d0;font-size:13px;color:#047857;text-align:center" id="payment-timer">⏱ 加载支付页面中...</div>
+      <div class="form-group" style="margin-top:8px">
+        <label style="text-align:center">👇 粘贴商家订单号验证</label>
+        <input type="text" id="payment-txid" placeholder="在账单中复制「商家订单号」粘贴到这里" style="text-align:center;font-family:monospace">
+        <div style="font-size:12px;color:#9ca3af;text-align:center;margin-top:6px">输入真实的商家订单号，一个订单号仅能使用一次</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin:8px 0;padding:10px;background:#f9fafb;border-radius:8px;font-size:13px;color:#4b5563">
+        <input type="checkbox" id="payment-confirm" style="width:18px;height:18px;accent-color:#10b981">
+        <label for="payment-confirm">我已确认完成支付，提供的是真实订单号</label>
+      </div>
+      <button class="btn btn-primary" onclick="validatePayment()" style="width:100%;margin-top:6px">🔑 验证并生成方案</button>
+      <div id="payment-error" style="display:none;margin-top:10px;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;font-size:13px;color:#dc2626"></div>
+    `;
+  }
+
+  html += `<div class="btn-row" style="flex-direction:column;margin-top:8px">
+    <button class="btn btn-secondary" onclick="goStep(6)" style="width:100%">← 返回选择套餐</button>
+  </div>`;
+
+  container.innerHTML = html;
+
   // 加载收款码图片
-  if (CONFIG.wechatQR) document.getElementById('pay-wechat-qr').innerHTML =
-    '<a href="' + CONFIG.wechatQR + '" target="_blank"><img src="' + CONFIG.wechatQR + '" alt="微信收款码"></a>';
-  if (CONFIG.alipayQR) document.getElementById('pay-alipay-qr').innerHTML =
-    '<a href="' + CONFIG.alipayQR + '" target="_blank"><img src="' + CONFIG.alipayQR + '" alt="支付宝收款码"></a>';
+  if (CONFIG.wechatQR) {
+    const wc = document.getElementById('pay-wechat-qr');
+    if (wc) wc.innerHTML = '<a href="' + CONFIG.wechatQR + '" target="_blank"><img src="' + CONFIG.wechatQR + '" alt="微信收款码"></a>';
+  }
+  if (CONFIG.alipayQR) {
+    const ali = document.getElementById('pay-alipay-qr');
+    if (ali) ali.innerHTML = '<a href="' + CONFIG.alipayQR + '" target="_blank"><img src="' + CONFIG.alipayQR + '" alt="支付宝收款码"></a>';
+  }
+  // 初始化支付会话（时间锁 + 防刷）
+  if (!CONFIG.payjsMchid) initPaymentSession();
 }
 
 function copyWechat() {
@@ -1619,8 +1812,21 @@ function appendVipSection() {
 }
 
 // ============================================================
-//  支付验证
+//  支付验证（多层防护）
 // ============================================================
+//  ① 时间锁：支付页打开后至少 45 秒才能验证
+//  ② 频率限制：最多 3 次尝试，超限锁定 10 分钟
+//  ③ 订单防重：localStorage + sessionStorage 双重记录
+//  ④ 确认勾选：必须勾选"已确认完成支付"
+// ============================================================
+const PAY_LOCK_KEY = 'diet_pay_lock';
+
+function getPaySession() {
+  try { return JSON.parse(sessionStorage.getItem(PAY_LOCK_KEY) || '{}'); } catch(e) { return {}; }
+}
+function setPaySession(s) {
+  sessionStorage.setItem(PAY_LOCK_KEY, JSON.stringify(s));
+}
 function getPaymentRecords() {
   try { return JSON.parse(localStorage.getItem('diet_payments') || '[]'); } catch(e) { return []; }
 }
@@ -1629,30 +1835,131 @@ function addPaymentRecord(orderId) {
   records.push({ orderId, plan: selectedPlan, time: Date.now() });
   localStorage.setItem('diet_payments', JSON.stringify(records));
 }
+// sessionStorage 中同时记录已用订单号（防清理 localStorage 后复用）
+function addSessionUsedOrder(orderId) {
+  const s = getPaySession();
+  if (!s.usedOrders) s.usedOrders = [];
+  s.usedOrders.push(orderId);
+  setPaySession(s);
+}
+
+function showPaymentError(msg) {
+  const el = document.getElementById('payment-error');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+function hidePaymentError() {
+  const el = document.getElementById('payment-error');
+  if (el) el.style.display = 'none';
+}
+
+// 支付页加载时初始化（在 renderPayment 末尾调用）
+function initPaymentSession() {
+  hidePaymentError();
+  const s = {
+    pageLoadTime: Date.now(),
+    attempts: 0,
+    locked: false,
+    lockTime: 0,
+    usedOrders: [],
+  };
+  setPaySession(s);
+  startPaymentTimer();
+}
+
+// 显示时间锁倒计时
+function startPaymentTimer() {
+  const el = document.getElementById('payment-timer');
+  if (!el) return;
+  const check = () => {
+    const s = getPaySession();
+    const elapsed = Date.now() - (s.pageLoadTime || Date.now());
+    const remaining = Math.max(0, 45 - Math.floor(elapsed / 1000));
+    if (remaining > 0) {
+      el.innerHTML = '⏱ 请完成支付，<strong>' + remaining + '</strong>秒后可验证（防止恶意尝试）';
+      el.style.color = '#dc2626';
+      setTimeout(check, 1000);
+    } else {
+      el.innerHTML = '✅ 已可以验证，请粘贴订单号';
+      el.style.color = '#047857';
+    }
+  };
+  check();
+}
 
 function validatePayment() {
+  const s = getPaySession();
+  hidePaymentError();
+
+  // ---- ① 检查是否被锁定 ----
+  if (s.locked) {
+    const lockRemaining = Math.ceil((Date.now() - s.lockTime) / 60000);
+    if (lockRemaining < 10) {
+      showPaymentError('尝试次数过多，请在 ' + (10 - lockRemaining) + ' 分钟后再试');
+      return;
+    } else {
+      // 锁定到期，重置
+      s.attempts = 0;
+      s.locked = false;
+      setPaySession(s);
+    }
+  }
+
+  // ---- ② 时间锁：必须等待至少 45 秒 ----
+  const elapsed = Date.now() - (s.pageLoadTime || 0);
+  if (elapsed < 45000) {
+    showPaymentError('请完成支付后再验证，请勿频繁尝试');
+    return;
+  }
+
+  // ---- ③ 递增尝试次数 ----
+  s.attempts = (s.attempts || 0) + 1;
+  if (s.attempts > 3) {
+    s.locked = true;
+    s.lockTime = Date.now();
+    setPaySession(s);
+    showPaymentError('尝试次数过多，已锁定 10 分钟，请稍后再试');
+    return;
+  }
+  setPaySession(s);
+
+  // ---- ④ 必须勾选确认 ----
+  const confirmEl = document.getElementById('payment-confirm');
+  if (!confirmEl || !confirmEl.checked) {
+    showPaymentError('请先确认已完成支付，并勾选确认框');
+    return;
+  }
+
+  // ---- ⑤ 订单号不能为空 ----
   const txid = document.getElementById('payment-txid').value.trim();
-
   if (!txid) {
-    toast('请先完成支付，再粘贴订单号验证');
+    showPaymentError('请粘贴微信/支付宝账单中的商家订单号');
     return;
   }
 
-  // 验证格式：支付订单号通常是 16-30 位的字母+数字组合
-  if (!/^[a-zA-Z0-9]{16,30}$/.test(txid)) {
-    toast('订单号格式不正确，请输入16-30位字母或数字（微信/支付宝账单中的订单号）');
+  // ---- ⑥ 格式校验：微信/支付宝商家订单号为纯数字 ----
+  if (!/^\d{16,32}$/.test(txid)) {
+    showPaymentError('订单号格式不正确，请输入微信/支付宝账单中的纯数字商家订单号');
     return;
   }
 
-  // 检查是否已被使用过
+  // ---- ⑦ 防重复使用（localStorage + sessionStorage 双重校验） ----
   const records = getPaymentRecords();
-  if (records.some(r => r.orderId === txid)) {
-    toast('该订单号已被使用过，请确认是否正确');
+  if (records.some(function(r) { return r.orderId === txid; })) {
+    showPaymentError('该订单号已被使用过，每个订单号仅能验证一次');
+    return;
+  }
+  if (s.usedOrders && s.usedOrders.indexOf(txid) !== -1) {
+    showPaymentError('该订单号在本会话中已尝试过，不能重复使用');
     return;
   }
 
-  // 记录支付
+  // ---- ⑧ 全部通过，记录支付 ----
   addPaymentRecord(txid);
+  addSessionUsedOrder(txid);
+
+  // 验证成功不计入失败次数
+  s.attempts = Math.max(0, s.attempts - 1);
+  setPaySession(s);
 
   toast('✅ 验证成功，正在为你生成专属方案...');
   generatePlan();
@@ -2004,6 +2311,40 @@ function restart() {
 //  初始化
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // ===== 处理 PayJS 支付回调 =====
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('trade_no') && urlParams.has('sign') && CONFIG.payjsKey) {
+    const params = {};
+    urlParams.forEach((v, k) => { if (k !== 'sign') params[k] = v; });
+    const callbackSign = urlParams.get('sign');
+    const expectedSign = payjsSign(params);
+    if (callbackSign === expectedSign) {
+      // 签名验证通过 —— 支付成功
+      try {
+        const pending = JSON.parse(localStorage.getItem('diet_pending_payment') || '{}');
+        if (pending.userData) {
+          Object.assign(data, pending.userData);
+          data.exerciseType = pending.userData.exerciseType || [];
+        }
+        if (pending.selectedPlan) selectedPlan = pending.selectedPlan;
+        localStorage.removeItem('diet_pending_payment');
+      } catch(e) {}
+      // 记录支付
+      addPaymentRecord(urlParams.get('out_trade_no') || 'payjs-' + Date.now());
+      // 清理 URL 参数
+      window.history.replaceState({}, '', window.location.pathname);
+      // 跳转到加载页并生成方案
+      document.querySelectorAll('.card[id^="step-"]').forEach(c => c.classList.add('hidden'));
+      document.getElementById('step-8').classList.remove('hidden');
+      setTimeout(() => generatePlan(), 300);
+      return;
+    } else {
+      // 签名验证失败
+      window.history.replaceState({}, '', window.location.pathname);
+      console.error('PayJS 回调签名验证失败');
+    }
+  }
+
   // 检查是否有已支付的方案（关闭网页再打开直接看）
   try {
     const saved = localStorage.getItem('diet_current_state');
