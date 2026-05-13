@@ -576,7 +576,7 @@ textarea { resize: vertical; min-height: 70px; }
       </div>
       <div class="feedback" id="fb-alcohol"></div>
     </div>
-
+  </div>
 
   <!-- ========== STEP 3: 运动 ========== -->
   <div class="card hidden" id="step-3">
@@ -1118,6 +1118,7 @@ async function analyzeResultFood() {
     document.getElementById('btn-analyze-food').disabled = false;
   }
 }
+function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2500);
