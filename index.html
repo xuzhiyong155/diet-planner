@@ -490,6 +490,7 @@ textarea { resize: vertical; min-height: 70px; }
         <div class="option-btn" data-value="提升自信" onclick="selectOption(this,'reason')">💫 提升自信</div>
         <div class="option-btn" data-value="其他" onclick="selectOption(this,'reason')">📝 其他</div>
       </div>
+      <div class="feedback" id="fb-reason"></div>
     </div>
 
     <div class="btn-row">
@@ -512,6 +513,17 @@ textarea { resize: vertical; min-height: 70px; }
         <div class="option-btn" data-value="混合" onclick="selectOption(this,'cooking')">🔄 混合</div>
       </div>
       <div class="feedback" id="fb-cooking"></div>
+    </div>
+
+    <div class="form-group">
+      <label>一天吃几顿？ <span class="required">*</span></label>
+      <div class="options-grid" id="meals-options">
+        <div class="option-btn" data-value="2顿（不吃早餐）" onclick="selectOption(this,'meals')">⏭️ 2顿（不吃早餐）</div>
+        <div class="option-btn" data-value="3顿（正常三餐）" onclick="selectOption(this,'meals')">🍚 3顿（正常三餐）</div>
+        <div class="option-btn" data-value="4-5顿（少量多餐）" onclick="selectOption(this,'meals')">🥗 4-5顿（少量多餐）</div>
+        <div class="option-btn" data-value="不固定" onclick="selectOption(this,'meals')">🔄 不固定</div>
+      </div>
+      <div class="feedback" id="fb-meals"></div>
     </div>
 
     <div class="form-group">
@@ -576,6 +588,17 @@ textarea { resize: vertical; min-height: 70px; }
       </div>
       <div class="feedback" id="fb-alcohol"></div>
     </div>
+    <div class="form-group">
+      <label>是否有食物过敏或不耐受？</label>
+      <div class="options-grid" id="allergies-options">
+        <div class="option-btn" data-value="没有" onclick="selectOption(this,'allergies')">✅ 没有</div>
+        <div class="option-btn" data-value="乳糖不耐受" onclick="selectOption(this,'allergies')">🥛 乳糖不耐受</div>
+        <div class="option-btn" data-value="麸质过敏" onclick="selectOption(this,'allergies')">🌾 麸质过敏</div>
+        <div class="option-btn" data-value="坚果过敏" onclick="selectOption(this,'allergies')">🥜 坚果过敏</div>
+        <div class="option-btn" data-value="海鲜过敏" onclick="selectOption(this,'allergies')">🦐 海鲜过敏</div>
+        <div class="option-btn" data-value="其他" onclick="selectOption(this,'allergies')">📝 其他</div>
+      </div>
+    </div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goStep(1)">← 上一步</button>
       <button class="btn btn-primary" onclick="validateStep2()">下一步 →</button>
@@ -630,6 +653,7 @@ textarea { resize: vertical; min-height: 70px; }
         <div class="option-btn" data-value="30-60分钟" onclick="selectOption(this,'exerciseTime')">✅ 30-60分钟</div>
         <div class="option-btn" data-value="1小时以上" onclick="selectOption(this,'exerciseTime')">💪 >1小时</div>
       </div>
+      <div class="feedback" id="fb-exerciseTime"></div>
     </div>
 
     <div class="form-group">
@@ -640,6 +664,7 @@ textarea { resize: vertical; min-height: 70px; }
         <div class="option-btn" data-value="下午" onclick="selectOption(this,'exercisePeriod')">🌤️ 下午</div>
         <div class="option-btn" data-value="晚上" onclick="selectOption(this,'exercisePeriod')">🌙 晚上</div>
       </div>
+      <div class="feedback" id="fb-exercisePeriod"></div>
     </div>
 
     <div class="form-group">
@@ -687,6 +712,7 @@ textarea { resize: vertical; min-height: 70px; }
         <div class="option-btn" data-value="体力劳动" onclick="selectOption(this,'workType')">🔧 体力劳动</div>
         <div class="option-btn" data-value="自由职业/其他" onclick="selectOption(this,'workType')">📋 自由职业</div>
       </div>
+      <div class="feedback" id="fb-workType"></div>
     </div>
 
     <div class="form-group">
@@ -990,6 +1016,37 @@ const FEEDBACK = {
     '有朋友一起': { type: 'good', text: '👫 有朋友一起减肥太棒了！互相监督鼓励！' },
     '一个人减':   { type: 'info', text: '💪 一个人也能减！我会给你足够的鼓励和指导。' },
   },
+  reason: {
+    '改善健康': { type: 'good', text: '❤️ 为了健康而减肥是最持久的动力！' },
+    '为了好看': { type: 'info', text: '✨ 为了更好看完全没问题！瘦下来穿啥都好看。' },
+    '重要日子': { type: 'info', text: '🎯 有明确目标很棒！我会帮你规划好时间节点。' },
+    '医生建议': { type: 'warn', text: '🏥 听医生的话很重要！减肥对很多慢性病都有改善作用。' },
+    '提升自信': { type: 'good', text: '💫 瘦下来确实会让人更自信，我们一起努力！' },
+    '其他':     { type: 'info', text: '📝 不管什么原因，只要你想减，我就会全力帮你！' },
+  },
+  exerciseTime: {
+    '少于30分钟': { type: 'info', text: '⏳ 时间短没关系！高强度间歇训练（HIIT）效率很高，15-20分钟也有效果。' },
+    '30-60分钟':  { type: 'good', text: '✅ 这个运动时长非常理想！有氧+力量组合效果最好。' },
+    '1小时以上':  { type: 'good', text: '💪 能坚持1小时以上太棒了！注意不要过度训练，要给身体恢复时间。' },
+  },
+  exercisePeriod: {
+    '早上': { type: 'good', text: '🌅 早上运动能提高全天代谢！空腹有氧燃脂效果更好。' },
+    '中午': { type: 'info', text: '☀️ 中午运动可以缓解工作压力，但记得饭后休息30分钟再动。' },
+    '下午': { type: 'info', text: '🌤️ 下午是人体最佳运动状态时段，力量和耐力都会更好。' },
+    '晚上': { type: 'info', text: '🌙 晚上运动有助于释放一天的压力，但不要太晚以免影响睡眠。' },
+  },
+  workType: {
+    '久坐办公':     { type: 'warn', text: '💺 久坐是减肥的大敌！我会给你一些办公室里的活动和拉伸建议。' },
+    '站立工作':     { type: 'info', text: '🧍 站着工作比坐着消耗更多热量，是个好基础！' },
+    '体力劳动':     { type: 'info', text: '🔧 体力劳动本身消耗不少热量，饮食控制会更关键。' },
+    '自由职业/其他': { type: 'info', text: '📋 自由职业时间灵活，更方便安排运动和饮食计划！' },
+  },
+  meals: {
+    '2顿（不吃早餐）': { type: 'warn', text: '⚠️ 不吃早餐容易导致午餐暴食，建议还是吃早餐更利于代谢。' },
+    '3顿（正常三餐）': { type: 'good', text: '👏 规律三餐是最好的饮食习惯！' },
+    '4-5顿（少量多餐）': { type: 'info', text: '📋 少量多餐有助于控制饥饿感，但要注意总热量不要超标。' },
+    '不固定':         { type: 'warn', text: '💡 不规律的饮食会影响代谢，我会帮你建立规律的饮食习惯。' },
+  },
 };
 
 // ============================================================
@@ -1003,7 +1060,7 @@ const data = {
   gender: '', age: '', height: '', weight: '', targetWeight: '', waist: '',
   duration: '90', reason: '',
   cooking: '', cuisine: '', veggies: '', sweetDrinks: '', snacks: '',
-  water: '', alcohol: '',
+  water: '', alcohol: '', meals: '', allergies: '',
   exerciseFreq: '', exerciseAttitude: '', exerciseType: [], exerciseTime: '',
   exercisePeriod: '', exerciseLimit: '',
   sleepTime: '', sleepQuality: '', workType: '', stress: '',
@@ -1237,6 +1294,7 @@ function validateStep2() {
   if (!data.sweetDrinks) { toast('请选择含糖饮料频率'); return; }
   if (!data.snacks) { toast('请选择宵夜习惯'); return; }
   if (!data.water) { toast('请选择饮水量'); return; }
+  if (!data.meals) { toast('请选择一天吃几顿'); return; }
   goStep(3);
 }
 function validateStep3() {
@@ -1262,6 +1320,7 @@ function renderReview() {
     waist:'腰围',duration:'周期（天）',reason:'减肥原因',
     cooking:'吃饭方式',cuisine:'口味偏好',veggies:'蔬菜摄入',
     sweetDrinks:'含糖饮料',snacks:'宵夜习惯',water:'饮水量',alcohol:'饮酒',
+    meals:'一天几顿',allergies:'食物过敏',
     exerciseFreq:'运动频率',exerciseAttitude:'运动态度',exerciseType:'喜欢运动',
     exerciseTime:'运动时间',exercisePeriod:'运动时段',exerciseLimit:'运动限制',
     sleepTime:'作息',sleepQuality:'睡眠质量',workType:'工作性质',
@@ -1269,7 +1328,7 @@ function renderReview() {
   };
   const sections = [
     { title:'📋 基本信息', keys:['gender','age','height','weight','targetWeight','waist','duration','reason'] },
-    { title:'🍽️ 饮食情况', keys:['cooking','cuisine','veggies','sweetDrinks','snacks','water','alcohol'] },
+    { title:'🍽️ 饮食情况', keys:['cooking','meals','cuisine','veggies','sweetDrinks','snacks','water','alcohol','allergies'] },
     { title:'🏃 运动情况', keys:['exerciseFreq','exerciseAttitude','exerciseType','exerciseTime','exercisePeriod','exerciseLimit'] },
     { title:'🌙 生活与健康', keys:['sleepTime','sleepQuality','workType','stress','dietHistory','support','conditions'] },
   ];
@@ -1588,6 +1647,7 @@ function buildUserSituation() {
     cooking: data.cooking, cuisine: data.cuisine, veggies: data.veggies,
     sweetDrinks: data.sweetDrinks, snacks: data.snacks,
     water: data.water, alcohol: data.alcohol || '未说明',
+    meals: data.meals || '未说明', allergies: data.allergies || '无',
     exerciseFreq: data.exerciseFreq, exerciseAttitude: data.exerciseAttitude,
     exerciseType: data.exerciseType.length ? data.exerciseType.join('、') : '未说明',
     exerciseTime: data.exerciseTime, exercisePeriod: data.exercisePeriod || '未说明',
@@ -1610,8 +1670,9 @@ function buildPrompt(s) {
 周期：${s.duration}，腰围：${s.waist}，减肥原因：${s.reason}
 
 === 饮食 ===
-吃饭方式：${s.cooking}，口味：${s.cuisine}，蔬菜：${s.veggies}
+吃饭方式：${s.cooking}，一天几顿：${s.meals}，口味：${s.cuisine}，蔬菜：${s.veggies}
 含糖饮料：${s.sweetDrinks}，宵夜：${s.snacks}，饮水：${s.water}，饮酒：${s.alcohol}
+食物过敏/不耐受：${s.allergies}
 
 === 运动 ===
 频率：${s.exerciseFreq}，态度：${s.exerciseAttitude}
