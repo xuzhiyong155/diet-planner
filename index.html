@@ -1624,14 +1624,8 @@ function renderPayment() {
     `;
   } else {
     // === 手动收款码模式（PayJS 未配置） ===
-    const refCode = currentOrderId;
     html += `
       <p class="step-sub" style="text-align:center">扫码支付后粘贴订单号验证</p>
-      <div style="background:#eff6ff;border:2px dashed #93c5fd;border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
-        <div style="font-size:13px;color:#1e40af;font-weight:600">📋 转账请填写此单号</div>
-        <div style="font-size:22px;font-weight:800;color:#1d4ed8;letter-spacing:2px;padding:8px 12px;background:#fff;border-radius:8px;margin-top:4px;font-family:monospace">${refCode}</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:6px">⚠️ <strong>转账时在备注里输入这个号</strong>，方便人工核对</div>
-      </div>
       <div class="payment-qr">
         <div class="payment-method">
           <div class="qr-box" id="pay-wechat-qr">
@@ -1652,18 +1646,10 @@ function renderPayment() {
           <div style="font-size:12px;color:#10b981;margin-top:4px">👆 点图片放大 → 长按保存</div>
         </div>
       </div>
-      <div style="background:#fff7ed;border-radius:10px;padding:12px 14px;margin:12px 0;border:1px solid #fed7aa;font-size:13px;color:#9a3412">
-        <strong>📱 付款步骤</strong><br>
-        ① 点击上面的收款码 → 长按保存到相册<br>
-        ② 打开微信/支付宝 → 扫一扫 → 从相册选取<br>
-        ③ <strong>转账时在备注里输入上方的订单参考号</strong><br>
-        ④ 支付完成后，复制账单里的「商家订单号」粘贴到下面验证
-      </div>
-      <div style="background:#f0fdf4;border-radius:10px;padding:10px 14px;margin:12px 0;border:1px solid #a7f3d0;font-size:13px;color:#047857;text-align:center" id="payment-timer">⏱ 加载支付页面中...</div>
       <div class="form-group" style="margin-top:8px">
-        <label style="text-align:center">👇 粘贴商家订单号验证</label>
-        <input type="text" id="payment-txid" placeholder="在账单中复制「商家订单号」粘贴到这里" style="text-align:center;font-family:monospace">
-        <div style="font-size:12px;color:#9ca3af;text-align:center;margin-top:6px">输入真实的商家订单号，一个订单号仅能使用一次</div>
+        <label style="text-align:center">👇 粘贴订单号验证</label>
+        <input type="text" id="payment-txid" placeholder="在账单中复制「订单号」粘贴到这里" style="text-align:center;font-family:monospace">
+        <div style="font-size:12px;color:#9ca3af;text-align:center;margin-top:6px">输入真实的订单号，一个订单号仅能使用一次</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin:8px 0;padding:10px;background:#f9fafb;border-radius:8px;font-size:13px;color:#4b5563">
         <input type="checkbox" id="payment-confirm" style="width:18px;height:18px;accent-color:#10b981">
@@ -1689,7 +1675,7 @@ function renderPayment() {
     const ali = document.getElementById('pay-alipay-qr');
     if (ali) ali.innerHTML = '<a href="' + CONFIG.alipayQR + '" target="_blank"><img src="' + CONFIG.alipayQR + '" alt="支付宝收款码"></a>';
   }
-  // 初始化支付会话（时间锁 + 防刷）
+  // 初始化支付会话（防刷）
   if (!CONFIG.payjsMchid) initPaymentSession();
 }
 
@@ -1924,28 +1910,8 @@ function initPaymentSession() {
     usedOrders: [],
   };
   setPaySession(s);
-  startPaymentTimer();
 }
 
-// 显示时间锁倒计时
-function startPaymentTimer() {
-  const el = document.getElementById('payment-timer');
-  if (!el) return;
-  const check = () => {
-    const s = getPaySession();
-    const elapsed = Date.now() - (s.pageLoadTime || Date.now());
-    const remaining = Math.max(0, 45 - Math.floor(elapsed / 1000));
-    if (remaining > 0) {
-      el.innerHTML = '⏱ 请完成支付，<strong>' + remaining + '</strong>秒后可验证（防止恶意尝试）';
-      el.style.color = '#dc2626';
-      setTimeout(check, 1000);
-    } else {
-      el.innerHTML = '✅ 已可以验证，请粘贴订单号';
-      el.style.color = '#047857';
-    }
-  };
-  check();
-}
 
 function validatePayment() {
   const s = getPaySession();
@@ -1965,14 +1931,8 @@ function validatePayment() {
     }
   }
 
-  // ---- ② 时间锁：必须等待至少 45 秒 ----
-  const elapsed = Date.now() - (s.pageLoadTime || 0);
-  if (elapsed < 45000) {
-    showPaymentError('请完成支付后再验证，请勿频繁尝试');
-    return;
-  }
 
-  // ---- ③ 递增尝试次数 ----
+  // ---- ② 递增尝试次数 ----
   s.attempts = (s.attempts || 0) + 1;
   if (s.attempts > 3) {
     s.locked = true;
@@ -1983,27 +1943,27 @@ function validatePayment() {
   }
   setPaySession(s);
 
-  // ---- ④ 必须勾选确认 ----
+  // ---- ③ 必须勾选确认 ----
   const confirmEl = document.getElementById('payment-confirm');
   if (!confirmEl || !confirmEl.checked) {
     showPaymentError('请先确认已完成支付，并勾选确认框');
     return;
   }
 
-  // ---- ⑤ 订单号不能为空 ----
+  // ---- ④ 订单号不能为空 ----
   const txid = document.getElementById('payment-txid').value.trim();
   if (!txid) {
-    showPaymentError('请粘贴微信/支付宝账单中的商家订单号');
+    showPaymentError('请粘贴微信/支付宝账单中的订单号');
     return;
   }
 
-  // ---- ⑥ 格式校验：微信/支付宝商家订单号为纯数字 ----
+  // ---- ⑤ 格式校验：微信/支付宝订单号为纯数字 ----
   if (!/^\d{16,32}$/.test(txid)) {
-    showPaymentError('订单号格式不正确，请输入微信/支付宝账单中的纯数字商家订单号');
+    showPaymentError('订单号格式不正确，请输入微信/支付宝账单中的纯数字订单号');
     return;
   }
 
-  // ---- ⑦ 防重复使用（localStorage + sessionStorage 双重校验） ----
+  // ---- ⑥ 防重复使用（localStorage + sessionStorage 双重校验） ----
   const records = getPaymentRecords();
   if (records.some(function(r) { return r.orderId === txid; })) {
     showPaymentError('该订单号已被使用过，每个订单号仅能验证一次');
@@ -2014,7 +1974,7 @@ function validatePayment() {
     return;
   }
 
-  // ---- ⑧ 全部通过，记录支付 ----
+  // ---- ⑦ 全部通过，记录支付 ----
   addPaymentRecord(txid);
   addSessionUsedOrder(txid);
 
